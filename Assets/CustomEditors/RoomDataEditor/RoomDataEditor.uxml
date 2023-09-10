@@ -1,2 +1,4 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:Label text="Room ID" display-tooltip-when-elided="true" name="RoomID" binding-path="ID" style="-unity-text-align: upper-center;" />
+    <RoomPreview max-visual-objects="9" binding-path="VisualObjects" style="height: 162px;" />
 </ui:UXML>

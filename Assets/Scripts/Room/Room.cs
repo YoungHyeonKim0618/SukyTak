@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 /*
  * 실제 게임 내에서 클릭할 수 있는 방 클래스.
@@ -10,16 +11,16 @@ using UnityEngine;
  */
 public class Room : MonoBehaviour
 {
-    
+    [Header("기본 멤버")] [SerializeField]
+    private RectTransform _interactableRootRectTransform;
 
-    private void Start()
-    {
-        InitRoom();
-    }
 
     public virtual void InitRoom()
     {
         SetRoomPosition();
+        
+        // 아직 방문하지 않은 
+        SetDarkImageAlpha(100);
     }
     // ------------------------------------------------------------------------
     // 방 위치 정보
@@ -56,6 +57,11 @@ public class Room : MonoBehaviour
         }
     }
 
+    private void SetDarkImageAlpha(float value)
+    {
+        _darkImage.color = new Color(0, 0, 0, value);
+    }
+
     // ------------------------------------------------------------------------
     // 클릭 시 이동 이벤트
     // ------------------------------------------------------------------------
@@ -69,22 +75,94 @@ public class Room : MonoBehaviour
     // ------------------------------------------------------------------------
     // 상호작용
     // ------------------------------------------------------------------------
+
+    
+    [SerializeField,DisableInInspector]
+    // 한 번이라도 방문한 적 있는지 여부. 게임 로딩 시 필요함
+    private bool _hasVisited;
+    
     
     /*
      * 방 전체를 뒤덮는 버튼 오브젝트.
      * 플레이어가 다른 방에서 클릭 시 해당 방으로 이동하려고 시도한다.
      * 만약 플레이어가 해당 방 안에 있다면, 비활성화된다.
      */
-    [SerializeField] private GameObject entireButton;
+    [SerializeField] private GameObject _entireButton;
 
     /*
+     * 방의 밝기를 조절하는 이미지.
+     * 아직 들어가보지 않았을 때, 들어가봤지만 현재 다른 방일 때, 현재 방일 때 각각 다른 알파 값을 가진다.
+     */
+    [SerializeField] private Image _darkImage;
+
+
+    public void Enter()
+    {
+        _hasVisited = true;
+        SetEntireButtonEnabled(false);
+        SetDarkImageAlpha(0);
+    }
+
+    public void Exit()
+    {
+        SetEntireButtonEnabled(true);
+        SetDarkImageAlpha(0.3f);
+    }
+    /*
+     * 
      * 뒤덮는 버튼의 액티브 상태를 지정하는 메서드.
      * 플레이어가 해당 방에 들어갈 때 false, 나갈 때 true로 지정해준다.
      */
-    public void SetEntireButtonEnabled(bool enable)
+    private void SetEntireButtonEnabled(bool enable)
     {
-        entireButton.gameObject.SetActive(enable);
+        _entireButton.gameObject.SetActive(enable);
     }
+    
+    // ------------------------------------------------------------------------
+    // Initiation (Side Rooms)
+    // ------------------------------------------------------------------------
+    
+    private RoomDataSO _dataSO;
+    public void SetRoomData(RoomDataSO dataSO)
+    {
+        _dataSO = dataSO;
+        _background.sprite = dataSO.Background;
+
+        foreach (var vo in dataSO.VisualObjects)
+        {
+            GameObject newGameObject = new GameObject();
+            Interactable interactable = newGameObject.AddComponent<Interactable>();
+            interactable.transform.localScale = Vector3.one;
+            interactable.transform.SetParent(_interactableRootRectTransform);
+            interactable.transform.SetSiblingIndex(0);
+            interactable.InitInteractable(vo.interactableSo);
+
+            interactable.transform.localPosition = new Vector3(vo.position.x, -vo.position.y);
+            interactable.transform.localScale = vo.scale;
+        }
+    }
+    
+    
+    
+    // ------------------------------------------------------------------------
+    // Initiation (Center Rooms)
+    // ------------------------------------------------------------------------
+
+    public void InitCenterRoom()
+    {
+        
+    }
+    
+    // ------------------------------------------------------------------------
+    // 비주얼
+    // ------------------------------------------------------------------------
+    
+    /*
+     * Side Room의 경우엔 RoomDataSO의 sprite를 적용시키지만,
+     * Center Room은 프리팹 자체에 이미 sprite를 가지며 변경하지 않음.
+     */
+    [SerializeField] private Image _background;
+    
     
     // ------------------------------------------------------------------------
     // 몬스터 정보

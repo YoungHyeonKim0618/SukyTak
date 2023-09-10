@@ -193,15 +193,15 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -161887935
+  m_SortingLayer: 1
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 8e8bb8c9580e1bd42977ebd518f47533, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 31ef1e25a819cb44d82be1678f33a183, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.32, y: 0.32}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -277,7 +277,7 @@ MonoBehaviour:
   m_Follow: {fileID: 2037652089}
   m_Lens:
     FieldOfView: 60
-    OrthographicSize: 7
+    OrthographicSize: 6
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0
@@ -493,7 +493,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 7
+  orthographic size: 6
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -590,6 +590,9 @@ MonoBehaviour:
   floorPrefab: {fileID: 3333413093255491742, guid: 82205412067ed0f4b8256f94483d1de2, type: 3}
   bottomFloorPrefab: {fileID: 6840863855043358539, guid: cf0097111a66ab44faacc5c4eed51e4e, type: 3}
   topFloorPrefab: {fileID: 223079293375729238, guid: 934cbdf80f3c64b468a36eb4dc0b53a0, type: 3}
+  _sideRoomDataSOs: []
+  _customMapSeed: -1
+  _customDifficulty: 0
 --- !u!4 &1810862393
 Transform:
   m_ObjectHideFlags: 0

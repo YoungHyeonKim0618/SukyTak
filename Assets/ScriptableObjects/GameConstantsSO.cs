@@ -24,5 +24,6 @@ public class GameConstantsSO : ScriptableObject
     }
 
     public int MaxFloor;
+    public float RoomWidth;
     public float RoomHeight;
 }

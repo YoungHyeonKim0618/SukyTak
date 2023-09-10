@@ -1,6 +1,7 @@
 ﻿
 using System;
 using UnityEngine;
+using UnityEngine.UI;
 using Button = UnityEngine.UI.Button;
 
 /*
@@ -10,44 +11,43 @@ using Button = UnityEngine.UI.Button;
 public class Interactable : MonoBehaviour
 {
     public InteractableDataSO myDataSo;
-    
-    /*
-     * 상호작용하기 위해 플레이어가 클릭할 수 있는 버튼.
-     * 버튼의 크기는 초기화 시 myDataSo의 Sprite 크기에 맞춰진다.
-     */
-    [SerializeField] private Button _button;
 
+    private Image _image;
 
-    private void Start()
+    public void InitInteractable(InteractableDataSO dataSO)
     {
-        InitInteractable();
-    }
-
-    public void InitInteractable()
-    {
-        if(myDataSo != null)
+        if(dataSO != null)
         {
-            _button.image.sprite = myDataSo.Sprite;
+            myDataSo = dataSO;
+            
+            _image = gameObject.AddComponent<Image>();
+            _image.sprite = myDataSo.Sprite;
+            
+            // 상호작용 가능하다면 버튼을 실제 생성한다.
+            if (dataSO.IsInteractable)
+            {
+                Button button = gameObject.AddComponent<Button>();
+                
+                // 버튼의 OnClick에 Interact를 리스너로 추가함.
+                button.onClick.AddListener(Interact);
+            }
+            else _image.raycastTarget = false;
+            
 
-            // 버튼의 크기를 DataSo의 Sprite Texture 크기에 따라 맞춤.
+            // 자신의 크기를 DataSo의 Sprite Texture 크기에 따라 맞춤.
             float ppu = myDataSo.Sprite.pixelsPerUnit;
             Vector2 buttonSize = new Vector2(myDataSo.Sprite.texture.width, myDataSo.Sprite.texture.height) / ppu;
-            _button.GetComponent<RectTransform>().sizeDelta = buttonSize;
-
-            // 버튼이 상호작용 가능한지 여부
-            _button.interactable = myDataSo.IsInteractable;
+            GetComponent<RectTransform>().sizeDelta = buttonSize;
             
-            // 버튼의 OnClick에 Interact를 리스너로 추가함.
-            _button.onClick.AddListener(Interact);
         }
     }
 
     public void Interact()
     {
-        //TODO : 정해진 확률에 따라 DataSo의 PossibleItems 중 하나를 획득.
+        //TODO : 정해진 확률에 따라 DataSo의 PossibleItems 중 하나를 획득, 다시 Interact 못하게 비활성화.
         
         // 만약 있다면, 루팅 후 스프라이트로 변경.
         if (myDataSo.SpriteAfterInteraction != null)
-            _button.image.sprite = myDataSo.SpriteAfterInteraction;
+            _image.sprite = myDataSo.SpriteAfterInteraction;
     }
 }

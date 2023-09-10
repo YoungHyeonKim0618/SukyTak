@@ -181,7 +181,6 @@ public class Player : MonoBehaviour
             //TODO : 열쇠 있는지 확인 후 있다면 소모 후 Unlock, 없다면 멈춤
         }
         
-        print($"MoveRoom : Starting Position : {_currentRoomPosition.floor}, {_currentRoomPosition.direction}");
         // 현재 방에 적이 있을 때
         if (CurrentRoom.HasAliveMonsters)
         {
@@ -207,22 +206,22 @@ public class Player : MonoBehaviour
     {
         var room = CurrentRoom;
         if(room != null)
-            room.SetEntireButtonEnabled(true);
+            room.Exit();
         
         _currentRoomPosition = destination;
         SyncPlayerPosWithRoom();
         
-        CurrentRoom.SetEntireButtonEnabled(false);
+        CurrentRoom.Enter();
     }
 
     private void ChangeRoom(RoomPosition nextRoomPos)
     {
-        CurrentRoom.SetEntireButtonEnabled(true);
+        CurrentRoom.Exit();
         // 현재 방을 이동함
         _currentRoomPosition = nextRoomPos;
         // 현재 플레이어 위치도 이동함
         SyncPlayerPosWithRoom();
-        CurrentRoom.SetEntireButtonEnabled(false);
+        CurrentRoom.Enter();
     }
 
     /*
