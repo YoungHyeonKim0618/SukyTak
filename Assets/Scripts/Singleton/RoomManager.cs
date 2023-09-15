@@ -12,15 +12,22 @@ public class RoomManager : MonoBehaviour
     {
         if (!Instance)
             Instance = this;
+        else
+        {
+            Destroy(this.gameObject);
+            return;
+        }
         
+        // Room과 Floor들의 오브젝트 생성
         CreateBuilding();
         
+        // 랜덤하게 방 구조 생성
         FindSideRoomDataSOs();
+        InitBuilding();
     }
 
     private void Start()
     {
-        InitBuilding();
     }
 
     // ------------------------------------------------------------------------

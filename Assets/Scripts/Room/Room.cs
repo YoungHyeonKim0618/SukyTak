@@ -18,13 +18,17 @@ public class Room : MonoBehaviour
     public virtual void InitRoom()
     {
         SetRoomPosition();
+        SetRoomSpots();
         
-        // 아직 방문하지 않은 
+        // 아직 방문하지 않은 방을 어둡게 함.
         SetDarkImageAlpha(100);
     }
+    
+    
     // ------------------------------------------------------------------------
     // 방 위치 정보
     // ------------------------------------------------------------------------
+    
     [SerializeField,DisableInInspector]
     private int _floorNumber;
     [SerializeField,DisableInInspector]
@@ -57,14 +61,49 @@ public class Room : MonoBehaviour
         }
     }
 
-    private void SetDarkImageAlpha(float value)
-    {
-        _darkImage.color = new Color(0, 0, 0, value);
-    }
 
+    // ------------------------------------------------------------------------
+    // 방 이동 & RoomSpot
+    // ------------------------------------------------------------------------
+
+    [Header("방 이동")] [SerializeField] private RoomSpot _leftRoomSpot;
+    [SerializeField] private RoomSpot _rightRoomSpot, _centerRoomSpot_0, _centerRoomSpot_1, _centerRoomSpot_2;
+
+    /*
+     * 방의 위치 기준점들.
+     * Side Room은 LEFT, RIGHT에 따라 각각 하나씩만을 가지고
+     * Center Room은 기준점/ 계단 시작/ 계단 중간 순서로 3개를 가짐.
+     */
+    public List<RoomSpot> spots;
+
+    private void SetRoomSpots()
+    {
+        switch (_roomDirection)
+        {
+            case RoomDirection.LEFT:
+                spots.Add(_leftRoomSpot);
+                break;
+            case RoomDirection.CENTER:
+                spots.Add(_centerRoomSpot_0);
+                spots.Add(_centerRoomSpot_1);
+                spots.Add(_centerRoomSpot_2);
+                break;
+            case RoomDirection.RIGHT:
+                spots.Add(_rightRoomSpot);
+                break;
+        }
+
+        foreach (var spot in spots)
+        {
+            spot.Host = this;
+        }
+    }
+    
+    
     // ------------------------------------------------------------------------
     // 클릭 시 이동 이벤트
     // ------------------------------------------------------------------------
+    
     [Header("클릭 이벤트")]
     [SerializeField] private RoomEventChannelSO _channel;
     public void OnClickRoom()
@@ -72,10 +111,10 @@ public class Room : MonoBehaviour
         _channel.OnEventRaised.Invoke(this);
     }
     
+    
     // ------------------------------------------------------------------------
     // 상호작용
     // ------------------------------------------------------------------------
-
     
     [SerializeField,DisableInInspector]
     // 한 번이라도 방문한 적 있는지 여부. 게임 로딩 시 필요함
@@ -89,11 +128,6 @@ public class Room : MonoBehaviour
      */
     [SerializeField] private GameObject _entireButton;
 
-    /*
-     * 방의 밝기를 조절하는 이미지.
-     * 아직 들어가보지 않았을 때, 들어가봤지만 현재 다른 방일 때, 현재 방일 때 각각 다른 알파 값을 가진다.
-     */
-    [SerializeField] private Image _darkImage;
 
 
     public void Enter()
@@ -163,6 +197,16 @@ public class Room : MonoBehaviour
      */
     [SerializeField] private Image _background;
     
+    /*
+     * 방의 밝기를 조절하는 이미지.
+     * 아직 들어가보지 않았을 때, 들어가봤지만 현재 다른 방일 때, 현재 방일 때 각각 다른 알파 값을 가진다.
+     */
+    [SerializeField] private Image _darkImage;
+    
+    private void SetDarkImageAlpha(float value)
+    {
+        _darkImage.color = new Color(0, 0, 0, value);
+    }
     
     // ------------------------------------------------------------------------
     // 몬스터 정보
@@ -212,5 +256,10 @@ public struct RoomPosition
     public static bool operator !=(RoomPosition a, RoomPosition b)
     {
         return a.floor != b.floor || a.direction != b.direction;
+    }
+
+    public override string ToString()
+    {
+        return $"({floor}, {direction})";
     }
 }

@@ -14,10 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ID: EMPTY_ROOM
   Background: {fileID: 21300000, guid: ab2a0427a5d968c46b7c22e3e8309c58, type: 3}
-  VisualObjects:
-  - interactableSo: {fileID: 11400000, guid: 28c3e5ae335227a428a53ebbdcf5e743, type: 2}
-    position: {x: 1.68, y: 0.05}
-    scale: {x: 1, y: 1}
-  - interactableSo: {fileID: 11400000, guid: b493c9f57d3dcb74babc39f7c51b6d10, type: 2}
-    position: {x: 1.1, y: 1.23}
-    scale: {x: 1.29, y: 1}
+  VisualObjects: []

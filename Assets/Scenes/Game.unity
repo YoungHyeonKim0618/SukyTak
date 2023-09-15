@@ -277,7 +277,7 @@ MonoBehaviour:
   m_Follow: {fileID: 2037652089}
   m_Lens:
     FieldOfView: 60
-    OrthographicSize: 6
+    OrthographicSize: 7
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0
@@ -493,7 +493,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 6
+  orthographic size: 7
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -618,9 +618,11 @@ GameObject:
   m_Component:
   - component: {fileID: 2037652089}
   - component: {fileID: 2037652088}
+  - component: {fileID: 2037652090}
+  - component: {fileID: 2037652091}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -637,11 +639,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b274ceb572daa4148b71ae73e725519f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _currentRoomPosition:
-    floor: 0
-    direction: 0
+  _currentRoomSpot: {fileID: 0}
   _onTryMoveChannel: {fileID: 11400000, guid: 3f35c018dc43c92419f48168b1dc9cc5, type: 2}
-  _onMoveChannel: {fileID: 11400000, guid: 427a22dbc7673744d92f526cc0a26bfa, type: 2}
+  _onMoveChannel: {fileID: 11400000, guid: dfcbbc3f77639ca4db687e45f5cda592, type: 2}
+  _moveSpeed: 6
+  _collider2D: {fileID: 2037652090}
+  _isMovingCoroutine: 0
 --- !u!4 &2037652089
 Transform:
   m_ObjectHideFlags: 0
@@ -658,6 +661,43 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!58 &2037652090
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2037652087}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0.25}
+  serializedVersion: 2
+  m_Radius: 0.25
+--- !u!50 &2037652091
+Rigidbody2D:
+  serializedVersion: 4
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2037652087}
+  m_BodyType: 1
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDrag: 0
+  m_AngularDrag: 0.05
+  m_GravityScale: 1
+  m_Material: {fileID: 0}
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 1
+  m_Constraints: 4
 --- !u!1 &2105521102
 GameObject:
   m_ObjectHideFlags: 3
