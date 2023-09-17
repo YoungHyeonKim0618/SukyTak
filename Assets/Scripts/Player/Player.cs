@@ -30,8 +30,8 @@ public class Player : MonoBehaviour
 
     private void InitPlayerPosition()
     {
-        _currentRoomSpot = RoomManager.Instance
-            .GetRoomFromPosition(new RoomPosition(GameConstantsSO.Instance.MaxFloor-1, RoomDirection.CENTER)).spots[0];
+        _currentRoom = RoomManager.Instance
+            .GetRoomFromPosition(new RoomPosition(GameConstantsSO.Instance.MaxFloor-1, RoomDirection.CENTER));
         MoveRoomInstantly(CurrentRoomPosition);
     }
 
@@ -49,15 +49,8 @@ public class Player : MonoBehaviour
     // 위치 정보
     // ------------------------------------------------------------------------
     [Header("현재 위치 정보")] [SerializeField, DisableInInspector]
-    private RoomSpot _currentRoomSpot;
-    
-    public RoomSpot CurrentRoomSpot()
-    {
-        return _currentRoomSpot;
-    }
-
-    private Room CurrentRoom => _currentRoomSpot.Host;
-    private RoomPosition CurrentRoomPosition => CurrentRoom.GetRoomPosition();
+    private Room _currentRoom;
+    private RoomPosition CurrentRoomPosition => _currentRoom.GetRoomPosition();
 
     
     // ------------------------------------------------------------------------
@@ -86,11 +79,17 @@ public class Player : MonoBehaviour
     [Tooltip("이동 속도")]
     [SerializeField] private float _moveSpeed;
 
+    // 이동 전체 코루틴
     private Coroutine _moveRoomLoopCoroutine;
+    // 다음 RoomSpot까지 이동하는 코루틴
     private Coroutine _moveCoroutine;
     
     // 진행 방향을 Vector2Int 형태로 저장하는 큐.
     private Queue<RoomSpot> _routesQueue = new Queue<RoomSpot>();
+
+    // 현재 향하고 있는 RoomSpot (이동 중이 아니라면 null)
+    [SerializeField, DisableInInspector]
+    private RoomSpot _headingRoomSpot;
 
     /*
      * 현재 방이 아닌 다른 방 클릭 시 발생되는 이벤트로부터 Invoke되는 메서드.
@@ -111,7 +110,7 @@ public class Player : MonoBehaviour
             if (_moveRoomLoopCoroutine != null)
             {
                 StopCoroutine(_moveRoomLoopCoroutine);
-                _moveCoroutine = null;
+                _moveRoomLoopCoroutine = null;
             }
             
             // 새로운 이동 루프 코루틴을 실행함.
@@ -131,17 +130,80 @@ public class Player : MonoBehaviour
     {
         _routesQueue.Clear();
 
+        // 현재 계단을 오르내리는 중인지 파악
+        float roomHeight = GameConstantsSO.Instance.RoomHeight;
+        float y = transform.position.y;
+        float h = CurrentRoomPosition.floor * roomHeight;
+        float yOffset = y - h;
+        print(yOffset);
+
+        bool underStair = yOffset > float.Epsilon && yOffset < 0.5f * roomHeight;
+        bool upperStair = yOffset >= 0.5f * roomHeight && yOffset < roomHeight;
+        print($"understair : {underStair}, upperstair : {upperStair}");
+        
+
         // 층이 다르다면 중앙으로 이동한 후 계단을 걸음.
         if (destination.GetRoomPosition().floor != CurrentRoomPosition.floor)
         {
-            // 중앙으로 이동
-            _routesQueue.Enqueue(RoomManager.Instance.GetRoomFromPosition(new RoomPosition(CurrentRoomPosition.floor,RoomDirection.CENTER)).spots[1]);
-
             int floorDiff = destination.GetRoomPosition().floor - CurrentRoomPosition.floor;
             int floorOffset = floorDiff > 0 ? 1 : -1;
+            
+            // 만약 이동 중이고 곧바로 다음 층으로 향하는 경우 첫 번째 방 이동을 무시해야 함.
+            bool ignoreFirstRoom = false;
+            
+            // 계단 이동 중이 아닐 때
+            if(_headingRoomSpot == null || (!underStair && !upperStair))
+            {
+                // 중앙으로 이동
+                _routesQueue.Enqueue(RoomManager.Instance.GetRoomFromPosition(new RoomPosition(CurrentRoomPosition.floor,RoomDirection.CENTER)).spots[1]);
+            }
+            // 이동 중일 때 (Center Room에 있는 것이 보장됨)
+            else
+            {
+                // Heading RoomSpot [1]
+                if (_headingRoomSpot == _currentRoom.spots[1])
+                {
+                    // 위층으로 올라가려면 현재 방의 RoomSpot [2] -> 다음 방의 RoomSpot [1]
+                    if (floorOffset == 1)
+                    {
+                        _routesQueue.Enqueue(_currentRoom.spots[2]);
+                        _routesQueue.Enqueue(RoomManager.Instance.GetRoomFromPosition(new RoomPosition(CurrentRoomPosition.floor + 1,RoomDirection.CENTER)).spots[1]);
+                        //다음 방으로 가므로 ignoreFirstRoom을 참으로 만듦.
+                        ignoreFirstRoom = true;
+                    }
+                    // 아니라면 기준 위치로 가고 있으므로 아무것도 하지 않는다.
+                }
+                // Heading RoomSpot [2]
+                else if (_headingRoomSpot == _currentRoom.spots[2])
+                {
+                    if (floorOffset == 1)
+                    {
+                        _routesQueue.Enqueue(RoomManager.Instance.GetRoomFromPosition(new RoomPosition(CurrentRoomPosition.floor + 1,RoomDirection.CENTER)).spots[1]);
+                        ignoreFirstRoom = true;
+                    }
+                    else
+                    {
+                        _routesQueue.Enqueue(_currentRoom.spots[1]);
+                    }
+                }
+                // Heading next RoomSpot [1]
+                else
+                {
+                    // 어차피 위층으로 올라갈 것이므로
+                    if (floorOffset == 1)
+                        ignoreFirstRoom = true;
+                    else
+                    {
+                        _routesQueue.Enqueue(_currentRoom.spots[2]);
+                        _routesQueue.Enqueue(_currentRoom.spots[1]);
+                    }
+                }
+            }
 
             for (int i = 0; i < Mathf.Abs(floorDiff); i++)
             {
+                if(i == 0 && ignoreFirstRoom) continue;
+                
                 Room now = RoomManager.Instance.GetRoomFromPosition(new RoomPosition(CurrentRoomPosition.floor + i * floorOffset,RoomDirection.CENTER));
                 Room next = RoomManager.Instance.GetRoomFromPosition(
                     new RoomPosition(CurrentRoomPosition.floor + (i + 1) * floorOffset, RoomDirection.CENTER));
@@ -160,6 +222,19 @@ public class Player : MonoBehaviour
                 }
             }
         }
+        // 층이 같은데 계단에 있다면 
+        else if (CurrentRoomPosition.direction == RoomDirection.CENTER && (underStair || upperStair))
+        {
+            // 위층의 RoomSpot [1]로 향할 때
+            if (!_currentRoom.spots.Contains(_headingRoomSpot))
+            {
+                _routesQueue.Enqueue(_currentRoom.spots[2]);
+                _routesQueue.Enqueue(_currentRoom.spots[1]);
+            }
+            // 현재 층의 RoomSpot [2]로 향할 때
+            else if (_headingRoomSpot.IsStair)
+                _routesQueue.Enqueue(_currentRoom.spots[1]);
+        }
         
         // 같은 층에 도달한 뒤 각각의 기준 위치로 바로 이동
         _routesQueue.Enqueue(destination.spots[0]);
@@ -170,18 +245,12 @@ public class Player : MonoBehaviour
     private IEnumerator MoveRoomLoop()
     {
         // 현재 RoomSpot을 향해 움직이고 있다면, 도착할 때까지 기다림.
-        //TODO : 어째서 이 부분 실행이 안 될까?
-        if (_moveCoroutine != null)
+        while (_headingRoomSpot != null)
         {
-            print("Waiting moving");
-            yield return _moveCoroutine;
-            print("Ended waiting moving");
+            yield return null;
         }
-        
-        //TODO : 만약 계단을 오르내리는 중이라면 기준 RoomSpot으로 일단 이동한다.
-        
         // 위치를 방의 기준점으로 초기화
-        SyncPlayerPosWithRoom();
+        //SyncPlayerPosWithRoom();
         
         RoomSpot direction;
         while (_routesQueue.TryDequeue(out direction))
@@ -199,14 +268,14 @@ public class Player : MonoBehaviour
      */
     private void MoveRoomInstantly(RoomPosition destination)
     {
-        var room = CurrentRoom;
+        var room = _currentRoom;
         if(room != null)
             room.Exit();
         
-        _currentRoomSpot = RoomManager.Instance.GetRoomFromPosition(destination).spots[0];
+        _currentRoom = RoomManager.Instance.GetRoomFromPosition(destination);
         SyncPlayerPosWithRoom();
         
-        CurrentRoom.Enter();
+        _currentRoom.Enter();
     }
 
     /*
@@ -215,6 +284,8 @@ public class Player : MonoBehaviour
      */
     private IEnumerator MoveToward(RoomSpot spot)
     {
+        _headingRoomSpot = spot;
+        
         //TODO : 애니메이션과 x축 반전 설정
         
         // Divide by 0을 막기 위해 최소값을 지정함
@@ -229,30 +300,16 @@ public class Player : MonoBehaviour
         //TODO : 게임 배속을 spd에 적용시키기
 
         yield return transform.DOMove(destination, movingTime).SetEase(Ease.Linear).WaitForCompletion();
-        print("MoveToward end!");
+        _headingRoomSpot = null;
     }
 
-    /*
-     * RoomSpot과 충돌했을 때 호출되는 메서드.
-     */
-    public void TouchRoomSpot(RoomSpot spot)
-    {
-        if(spot != null)
-        {
-            // 충돌체가 겹칠 때가 있으므로 여기서도 방이 바뀌는지 확인해줌.
-            bool change = spot.Host != CurrentRoom;
-            if(change) ChangeRoom(spot.Host);
-            
-            _currentRoomSpot = spot;
-        }
-    }
     /*
      * RoomEnterDetector와 충돌했을 때 호출되는 메서드.
      */
     public void Detected(RoomEnterDetector detector)
     {
         // 다른 방의 RoomSpot에 간다면 방을 바꿈.
-        if (detector.Host != CurrentRoom)
+        if (detector.Host != _currentRoom)
         {
             ChangeRoom(detector.Host);
         }
@@ -263,8 +320,11 @@ public class Player : MonoBehaviour
      */
     private void ChangeRoom(Room room)
     {
-        CurrentRoom.Exit();
+        print($"Change Room! {room.GetRoomPosition()} ");
+        _currentRoom.Exit();
         room.Enter();
+
+        _currentRoom = room;
             
         _onMoveChannel.OnRaise(room);
     }
@@ -280,7 +340,7 @@ public class Player : MonoBehaviour
 
     private void SyncPlayerPosWithRoom()
     {
-        transform.position = _currentRoomSpot.Host.spots[0].transform.position;
+        transform.position = _currentRoom.spots[0].transform.position;
     }
     
     // ------------------------------------------------------------------------

@@ -10,22 +10,15 @@ public class RoomSpot : MonoBehaviour
     [SerializeField, DisableInInspector]
     private Room _host;
 
+    [SerializeField] private bool _isStair;
+    public bool IsStair => _isStair;
+
     public Room Host
     {
         get { return _host; }
         set
         {
             _host = value;
-        }
-    }
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        // host가 null이라면 (초기화되지 않았다면) 쓰이지 않으므로 아무 일도 일어나지 않음
-        if (_host != null && other.CompareTag("Player"))
-        {
-            Player player = other.GetComponent<Player>();
-            player.TouchRoomSpot(this);
         }
     }
 

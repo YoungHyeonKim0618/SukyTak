@@ -124,7 +124,7 @@ CircleCollider2D:
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
-  m_Radius: 0.25
+  m_Radius: 0.1
 --- !u!114 &8835844358955777212
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -138,6 +138,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _host: {fileID: 0}
+  _isStair: 0
 --- !u!1 &1975738998815177366
 GameObject:
   m_ObjectHideFlags: 0
@@ -235,6 +236,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _host: {fileID: 0}
+  _isStair: 0
 --- !u!1 &2111659359221940426
 GameObject:
   m_ObjectHideFlags: 0
@@ -370,6 +372,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _host: {fileID: 0}
+  _isStair: 1
 --- !u!1 &2424086297125209661
 GameObject:
   m_ObjectHideFlags: 0
@@ -541,6 +544,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _host: {fileID: 0}
+  _isStair: 0
 --- !u!1 &5355821835112505158
 GameObject:
   m_ObjectHideFlags: 0
@@ -589,7 +593,7 @@ CircleCollider2D:
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
-  m_Radius: 0.25
+  m_Radius: 0.1
 --- !u!114 &3539647967602825402
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -603,6 +607,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _host: {fileID: 0}
+  _isStair: 0
 --- !u!1 &5839082651368721327
 GameObject:
   m_ObjectHideFlags: 0
