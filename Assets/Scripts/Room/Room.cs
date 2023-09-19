@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 /*
  * 실제 게임 내에서 클릭할 수 있는 방 클래스.
@@ -170,6 +171,30 @@ public class Room : MonoBehaviour
             interactable.transform.SetParent(_interactableRootRectTransform);
             interactable.transform.SetSiblingIndex(0);
             interactable.InitInteractable(vo.interactableSo);
+            
+            // 어떤 아이템을 가지고 있는지를 정해줌.
+            // 미획득/ 획득 중 획득 시에는 추가로 20% 확률로 2개 아이템을 가짐.
+            bool rootable = Random.Range(0, 100) <
+                            GameConstantsSO.Instance.GetRootChanceFromDifficulty(RoomManager.Instance.GetDifficulty());
+            if (rootable)
+            {
+                int rootingNum = Random.Range(0, 100) < 20 ? 2 : 1;
+                for (int i = 0; i < rootingNum; i++)
+                {
+                    ItemDataSO obtaining = null;
+                    // 만약 정해진 아이템 풀이 있다면 그 중 획득, 없다면 모든 풀 중에서 랜덤 획득
+                    if (vo.interactableSo.PossibleItems.Count > 0)
+                    {
+                        int index = Random.Range(0, vo.interactableSo.PossibleItems.Count);
+                        obtaining = vo.interactableSo.PossibleItems[index];
+                    }
+                    else
+                    {
+                        obtaining = GameConstantsSO.Instance.GetRandomRootableItem();
+                    }
+                    interactable.AddRootable(obtaining);
+                }
+            }
 
             interactable.transform.localPosition = new Vector3(vo.position.x, -vo.position.y);
             interactable.transform.localScale = vo.scale;

@@ -1,6 +1,8 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class DataManager : MonoBehaviour
 {
@@ -22,4 +24,6 @@ public class DataManager : MonoBehaviour
     public int MapSeed;
     [DisableInInspector]
     public GameDifficulty Difficulty;
+
+
 }

@@ -1,8 +1,11 @@
 ﻿
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Button = UnityEngine.UI.Button;
+using Random = UnityEngine.Random;
 
 /*
  * 클릭해서 상호작용할 수 있는 오브젝트.
@@ -10,18 +13,23 @@ using Button = UnityEngine.UI.Button;
  */
 public class Interactable : MonoBehaviour
 {
-    public InteractableDataSO myDataSo;
+    public InteractableDataSO MyDataSo;
 
     private Image _image;
+
+    // Interactable이 아이템을 실제 가지고 있는지 여부는 Building 초기화 과정에서 정해진다.
+    public List<ItemDataSO> Rootables = new List<ItemDataSO>();
+    [SerializeField,DisableInInspector]
+    private bool _rooted;
 
     public void InitInteractable(InteractableDataSO dataSO)
     {
         if(dataSO != null)
         {
-            myDataSo = dataSO;
+            MyDataSo = dataSO;
             
             _image = gameObject.AddComponent<Image>();
-            _image.sprite = myDataSo.Sprite;
+            _image.sprite = MyDataSo.Sprite;
             
             // 상호작용 가능하다면 버튼을 실제 생성한다.
             if (dataSO.IsInteractable)
@@ -35,19 +43,39 @@ public class Interactable : MonoBehaviour
             
 
             // 자신의 크기를 DataSo의 Sprite Texture 크기에 따라 맞춤.
-            float ppu = myDataSo.Sprite.pixelsPerUnit;
-            Vector2 buttonSize = new Vector2(myDataSo.Sprite.texture.width, myDataSo.Sprite.texture.height) / ppu;
+            float ppu = MyDataSo.Sprite.pixelsPerUnit;
+            Vector2 buttonSize = new Vector2(MyDataSo.Sprite.texture.width, MyDataSo.Sprite.texture.height) / ppu;
             GetComponent<RectTransform>().sizeDelta = buttonSize;
             
         }
     }
 
+    public void AddRootable(ItemDataSO itemData)
+    {
+        Rootables.Add(itemData);
+    }
+
     public void Interact()
     {
         //TODO : 정해진 확률에 따라 DataSo의 PossibleItems 중 하나를 획득, 다시 Interact 못하게 비활성화.
+        if (Rootables.Count > 0 && !_rooted)
+        {
+            StartCoroutine(Root());
+        }
         
         // 만약 있다면, 루팅 후 스프라이트로 변경.
-        if (myDataSo.SpriteAfterInteraction != null)
-            _image.sprite = myDataSo.SpriteAfterInteraction;
+        if (MyDataSo.SpriteAfterInteraction != null)
+            _image.sprite = MyDataSo.SpriteAfterInteraction;
+        
+        _rooted = true;
+    }
+
+    private IEnumerator Root()
+    {
+        foreach (var itemData in Rootables)
+        {
+            Player.Instance.ObtainItem(itemData,transform.position);
+            yield return new WaitForSeconds(0.3f);
+        }
     }
 }

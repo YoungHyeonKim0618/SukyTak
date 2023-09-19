@@ -3,9 +3,17 @@ using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Player : MonoBehaviour
 {
+    public static Player Instance;
+    private void Awake()
+    {
+        if (!Instance) Instance = this;
+        else Destroy(gameObject);
+    }
+
     private void Start()
     {
         Init();
@@ -16,6 +24,7 @@ public class Player : MonoBehaviour
     // ------------------------------------------------------------------------
     private void Init()
     {
+        _status = new PlayerStatus(_expPerLevelData);
         //TODO : 이전 씬에서 선택한 패시브/액티브 특성 효과 적용
         
         // 이벤트 채널 등록
@@ -39,10 +48,46 @@ public class Player : MonoBehaviour
     // ------------------------------------------------------------------------
     // 저장 데이터로부터 로드
     // ------------------------------------------------------------------------
-    
+        
     // ------------------------------------------------------------------------
     // 현재 상태 (스탯) 정보
     // ------------------------------------------------------------------------
+
+    [Header("스탯")] private PlayerStatus _status;
+    [SerializeField] private ExpPerLevelDataSO _expPerLevelData;
+
+    public void ModifyHp(float value)
+    {
+        _status.CurHp += value;
+    }
+
+    public void ModifySatiety(float value)
+    {
+        _status.CurSatiety += value;
+    }
+
+    public void EarnExp(float value)
+    {
+        _status.CurExp += value;
+    }
+    
+    // ------------------------------------------------------------------------
+    // 인벤토리 정보
+    // ------------------------------------------------------------------------
+    
+    [Header("인벤토리")][SerializeField] private PlayerInventory _inventory;
+
+    public void ObtainItem(ItemDataSO data, Vector2 pos = new Vector2())
+    {
+        _inventory.ObtainItem(data);
+        DisplayObtainItem(data, pos);
+    }
+
+    public void DropItem(Item item)
+    {
+        _inventory.DropItem(item);
+        DisplayDropItem(item);
+    }
     
     
     // ------------------------------------------------------------------------
@@ -135,11 +180,9 @@ public class Player : MonoBehaviour
         float y = transform.position.y;
         float h = CurrentRoomPosition.floor * roomHeight;
         float yOffset = y - h;
-        print(yOffset);
 
         bool underStair = yOffset > float.Epsilon && yOffset < 0.5f * roomHeight;
         bool upperStair = yOffset >= 0.5f * roomHeight && yOffset < roomHeight;
-        print($"understair : {underStair}, upperstair : {upperStair}");
         
 
         // 층이 다르다면 중앙으로 이동한 후 계단을 걸음.
@@ -320,7 +363,6 @@ public class Player : MonoBehaviour
      */
     private void ChangeRoom(Room room)
     {
-        print($"Change Room! {room.GetRoomPosition()} ");
         _currentRoom.Exit();
         room.Enter();
 
@@ -342,6 +384,38 @@ public class Player : MonoBehaviour
     {
         transform.position = _currentRoom.spots[0].transform.position;
     }
+    
+    // ------------------------------------------------------------------------
+    // 초기화
+    // ------------------------------------------------------------------------
+    [Header("UI")]
+    [SerializeField] private Canvas _playerCanvas;
+    // 아이템 획득/상실 시에 UI 생성을 위한 이미지 프리팹.
+    [SerializeField] private Image p_ItemImage;
+    [SerializeField] private float _itemImageOffsetY;
+
+    private void DisplayObtainItem(ItemDataSO itemData, Vector2 pos)
+    {
+        // pos가 (0,0)이라면 기본 값이라고 간주, 플레이어 포지션으로 생각함.
+        Vector2 startingPos = pos == Vector2.zero ? transform.position + new Vector3(0,1,0) : pos;
+        
+        var newImage = Instantiate(p_ItemImage,startingPos,Quaternion.identity,_playerCanvas.transform);
+        newImage.sprite = itemData.Sprite;
+        newImage.rectTransform.DOMoveY(startingPos.y + 1, 0.5f);
+        Destroy(newImage.gameObject, 0.75f);
+    }
+
+    private void DisplayDropItem(Item item)
+    {
+        Vector2 startingPos =transform.position + new Vector3(0,1,0);
+        
+        var newImage = Instantiate(p_ItemImage,startingPos,Quaternion.identity,_playerCanvas.transform);
+        newImage.sprite = item.Data.Sprite;
+        newImage.rectTransform.DOMoveY(startingPos.y + 1, 0.5f);
+        Destroy(newImage.gameObject, 0.75f);
+    }
+    
+    
     
     // ------------------------------------------------------------------------
     // 디버그

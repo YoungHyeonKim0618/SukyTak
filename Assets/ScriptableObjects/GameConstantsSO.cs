@@ -1,4 +1,5 @@
 ﻿
+using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "ScriptableObject/GameConstants")]
@@ -26,4 +27,36 @@ public class GameConstantsSO : ScriptableObject
     public int MaxFloor;
     public float RoomWidth;
     public float RoomHeight;
+    public float RottenFoodDmg;
+
+    public List<float> RootChancePerDifficulty;
+    public float GetRootChanceFromDifficulty(GameDifficulty difficulty)
+    {
+        float ret = 0;
+        switch (difficulty)
+        {
+            case GameDifficulty.EASY:
+                ret = RootChancePerDifficulty[0];
+                break;
+            case GameDifficulty.NORMAL:
+                ret = RootChancePerDifficulty[1];
+                break;
+            case GameDifficulty.HARD:
+                ret = RootChancePerDifficulty[2];
+                break;
+            case GameDifficulty.HARDCORE:
+                ret = RootChancePerDifficulty[3];
+                break;
+        }
+
+        return ret;
+    }
+    
+    
+    [SerializeField] private List<ItemDataSO> _rootableItems;
+    public ItemDataSO GetRandomRootableItem()
+    {
+        int index = Random.Range(0, _rootableItems.Count);
+        return _rootableItems[index];
+    }
 }

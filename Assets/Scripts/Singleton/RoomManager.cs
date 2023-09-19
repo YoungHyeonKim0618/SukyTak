@@ -7,6 +7,7 @@ using Random = UnityEngine.Random;
 public class RoomManager : MonoBehaviour
 {
     public static RoomManager Instance;
+    [SerializeField] private Transform _buildingRoot;
 
     private void Awake()
     {
@@ -47,20 +48,20 @@ public class RoomManager : MonoBehaviour
         float roomHeight = GameConstantsSO.Instance.RoomHeight;
         
         // 1층
-        var bottomFloor = Instantiate(bottomFloorPrefab, Vector3.zero, Quaternion.identity);
+        var bottomFloor = Instantiate(bottomFloorPrefab, Vector3.zero, Quaternion.identity,_buildingRoot);
         _roomsDictionary.Add(new RoomPosition(0,RoomDirection.CENTER),bottomFloor.Center);
 
         // 중간 층들
         for (int i = 1; i < maxFloor - 1; i++)
         {
-            var floor = Instantiate(floorPrefab, new Vector3(0, roomHeight * i, 0), Quaternion.identity);
+            var floor = Instantiate(floorPrefab, new Vector3(0, roomHeight * i, 0), Quaternion.identity,_buildingRoot);
             _roomsDictionary.Add(new RoomPosition(i,RoomDirection.LEFT),floor.Left);
             _roomsDictionary.Add(new RoomPosition(i,RoomDirection.CENTER),floor.Center);
             _roomsDictionary.Add(new RoomPosition(i,RoomDirection.RIGHT),floor.Right);
         }
 
         // 마지막 층
-        var topFloor = Instantiate(topFloorPrefab, new Vector3(0,roomHeight * (maxFloor-1), 0), Quaternion.identity);
+        var topFloor = Instantiate(topFloorPrefab, new Vector3(0,roomHeight * (maxFloor-1), 0), Quaternion.identity,_buildingRoot);
         _roomsDictionary.Add(new RoomPosition(maxFloor-1,RoomDirection.CENTER),topFloor.Center);
     }
 
@@ -125,6 +126,7 @@ public class RoomManager : MonoBehaviour
             if (_customMapSeed == -1) seed = Random.Range(Int32.MinValue, Int32.MaxValue);
             else seed = _customMapSeed;
             difficulty = _customDifficulty;
+            _customMapSeed = seed;
         }
         
         Random.InitState(seed);
@@ -177,5 +179,29 @@ public class RoomManager : MonoBehaviour
     private void InitBottomRoom()
     {
         _roomsDictionary[new RoomPosition(0,RoomDirection.CENTER)].InitRoom();
+    }
+    
+    // ------------------------------------------------------------------------
+    // 게임 변수 (임시)
+    // ------------------------------------------------------------------------
+
+    // 일반적인 경우에 DataManager가 있다면 그 값을 반환, 없다면 임시 값을 반환함 (디버그용)
+    public int GetSeed()
+    {
+        if (DataManager.Instance != null)
+        {
+            return DataManager.Instance.MapSeed;
+        }
+        return _customMapSeed;
+    }
+
+    public GameDifficulty GetDifficulty()
+    {
+        if (DataManager.Instance != null)
+        {
+            return DataManager.Instance.Difficulty;
+        }
+
+        return _customDifficulty;
     }
 }
