@@ -1,7 +1,10 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class PlayerInventory : MonoBehaviour
 {
@@ -49,14 +52,13 @@ public class PlayerInventory : MonoBehaviour
                     break;
                 case ItemType.MEDICAL:
                 case ItemType.FOOD:
-                    newItemUi.transform.SetParent(medicalGrid);
+                    newItemUi.transform.SetParent(_medicalGrid);
                     break;
                 default:
-                    newItemUi.transform.SetParent(materialGrid);
+                    newItemUi.transform.SetParent(_materialGrid);
                     break;
             }
         }
-        print($"Current Items : {_items.Count}");
     }
 
     public void DropItem(Item item)
@@ -85,7 +87,67 @@ public class PlayerInventory : MonoBehaviour
         }
         
     }
+    
+    
+    // ------------------------------------------------------------------------
+    // 무기
+    // ------------------------------------------------------------------------
+    [Header("무기")] 
+    // 아무 무기도 없을 때의 맨주먹 데이터.
+    [SerializeField] private WeaponData s_fistData;
+    
+    // 장착 중인 무기 아이템이 사라질 때, 장착도 해제되어야 함
+    [SerializeField, DisableInInspector] private WeaponData _leftWeapon, _rightWeapon;
 
+    private bool _selectingLeftWeapon;
+
+    public WeaponData CurWeaponData => _selectingLeftWeapon ? _leftWeapon : _rightWeapon;
+
+    private void InitWeapons()
+    {
+        _leftWeapon = s_fistData;
+        _rightWeapon = s_fistData;
+        RefreshWeaponUi();
+    }
+
+    private void EquipWeapon(WeaponData data, bool left)
+    {
+        if (left) _leftWeapon = data;
+        else _rightWeapon = data;
+    }
+
+    private void UnEquipWeapon(WeaponData data)
+    {
+        if (_leftWeapon == data || _rightWeapon == data)
+        {
+            
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // 디스플레이
+    // ------------------------------------------------------------------------
+    [Header("디스플레이")] [SerializeField] private Image _displayImage;
+    [SerializeField]
+    private TextMeshProUGUI _nameTmp, _descriptionTmp;
+
+    [SerializeField] private float _displayOffsetY;
+
+    public void DisplayItem(Item item, Vector2 pos)
+    {
+        ItemDataSO data = item.Data;
+        _nameTmp.text = data.Name;
+        _descriptionTmp.text = data.GetString();
+        _displayImage.gameObject.SetActive(true);
+        _displayImage.transform.position = pos + new Vector2(0, _displayOffsetY);
+    }
+
+    public void CloseDisplay()
+    {
+        _displayImage.gameObject.SetActive(false);
+        _displayImage.gameObject.SetActive(false);
+    }
+    
     // ------------------------------------------------------------------------
     // UI
     // ------------------------------------------------------------------------
@@ -93,17 +155,21 @@ public class PlayerInventory : MonoBehaviour
     // Item 버튼 오브젝틑의 프리팹
     [SerializeField] private ItemUI p_itemUi;
     // ItemUI의 부모 그리드 
-    [SerializeField] private Transform _weaponGrid, _accessoryGrid, medicalGrid, materialGrid;
+    [SerializeField] private Transform _weaponGrid, _accessoryGrid, _medicalGrid, _materialGrid;
+
+    [Space(10)] [SerializeField] private GraphicRaycaster _raycaster;
 
 
     private void Start()
     {
         CloseInventoryUi();
+        InitWeapons();
     }
 
     public void OpenInventoryUi()
     {
         _inventoryRoot.gameObject.SetActive(true);
+        ForceUpdateGridLayouts();
     }
 
     public void CloseInventoryUi()
@@ -111,6 +177,55 @@ public class PlayerInventory : MonoBehaviour
         _inventoryRoot.gameObject.SetActive(false);
     }
     
+    /*
+     * ItemUI 드래그 & 드롭 시 아래의 ItemUI를 감지하고 위치를 뒤바꾸는 메서드.
+     */
+    public void CheckItemUiBelow(ItemUI caller, PointerEventData eventData)
+    {
+        List<RaycastResult> results = new List<RaycastResult>();
+        _raycaster.Raycast(eventData,results);
+
+        foreach (var result in results)
+        {
+            ItemUI itemUi = result.gameObject.GetComponent<ItemUI>();
+            if (itemUi != null && itemUi != caller)
+            {
+                int myIndex = itemUi.transform.GetSiblingIndex();
+                int otherIndex = caller.transform.GetSiblingIndex();
+            
+                itemUi.transform.SetSiblingIndex(otherIndex);
+                caller.transform.SetSiblingIndex(myIndex);
+
+                GridLayoutGroup grid = itemUi.transform.parent.GetComponent<GridLayoutGroup>();
+                return;
+            }
+        }
+        ForceUpdateGridLayouts();
+    }
+
+    private void ForceUpdateGridLayouts()
+    {
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)_weaponGrid.transform);
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)_accessoryGrid.transform);
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)_medicalGrid.transform);
+        LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)_materialGrid.transform);
+    }
+
+
+    [SerializeField] private Image _leftWeaponImage, _rightWeaponImage;
+    [SerializeField] private TextMeshProUGUI _leftWeaponNameTmp, _rightWeaponNameTmp;
+    [SerializeField] private TextMeshProUGUI _leftWeaponDescTmp, _rightWeaponDescTmp;
+    private void RefreshWeaponUi()
+    {
+        _leftWeaponImage.sprite = _leftWeapon.Sprite;
+        _rightWeaponImage.sprite = _rightWeapon.Sprite;
+        
+        _leftWeaponNameTmp.text = _leftWeapon.Name;
+        _rightWeaponNameTmp.text = _rightWeapon.Name;
+
+        _leftWeaponDescTmp.text = _leftWeapon.GetString();
+        _rightWeaponDescTmp.text = _rightWeapon.GetString();
+    }
     
     // ------------------------------------------------------------------------
     // 조합, 조합법

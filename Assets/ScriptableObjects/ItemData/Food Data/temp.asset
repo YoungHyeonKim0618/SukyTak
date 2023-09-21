@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 731184af8a8805545bb40a5420217e21, type: 3}
-  m_Name: Halls
+  m_Name: temp
   m_EditorClassIdentifier: 
-  ID: halls
-  Name: "\uD638\uC62C\uC2A4"
-  Sprite: {fileID: 21300000, guid: 2c24d25ce90d0cc4dbeaf48f2f077285, type: 3}
+  ID: yasuo
+  Name: "\uC57C\uC2A4\uC624"
+  Sprite: {fileID: 21300000, guid: 31ef1e25a819cb44d82be1678f33a183, type: 3}
   Type: 4
   Stackable: 1
   Recipes: []
-  Satiety: 12
-  IsRotten: 1
+  Satiety: 9
+  IsRotten: 0

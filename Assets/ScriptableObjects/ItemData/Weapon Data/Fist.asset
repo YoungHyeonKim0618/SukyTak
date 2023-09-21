@@ -9,9 +9,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 72487025e7a86b148b88cfcb902a2af3, type: 3}
-  m_Name: Empty Room Data
+  m_Script: {fileID: 11500000, guid: 79820bacc432d964a9cb849894f1a871, type: 3}
+  m_Name: Fist
   m_EditorClassIdentifier: 
-  ID: EMPTY_ROOM
-  Background: {fileID: 21300000, guid: ab2a0427a5d968c46b7c22e3e8309c58, type: 3}
-  VisualObjects: []
+  ID: fist
+  Name: "\uC8FC\uBA39"
+  Sprite: {fileID: 21300000, guid: 660ba19c0275d3c4fa208c40828275a5, type: 3}
+  Type: 1
+  Stackable: 0
+  Recipes: []
+  MinDmg: 1
+  MaxDmg: 2

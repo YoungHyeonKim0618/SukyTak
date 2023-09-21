@@ -47,6 +47,15 @@ TagManager:
   - name: Wall
     uniqueID: 4059309179
     locked: 0
+  - name: GameUI
+    uniqueID: 2048275605
+    locked: 0
   - name: UI
     uniqueID: 2292075133
+    locked: 0
+  - name: ItemDisplay
+    uniqueID: 1088260299
+    locked: 0
+  - name: HitSelection
+    uniqueID: 3239289437
     locked: 0

@@ -17,9 +17,10 @@ MonoBehaviour:
   RoomHeight: 4
   RottenFoodDmg: 8
   RootChancePerDifficulty:
-  - 75
-  - 65
+  - 77.5
+  - 70
+  - 62.5
   - 55
-  - 45
   _rootableItems:
   - {fileID: 11400000, guid: ad182df58ff056243bec07b49ca53e59, type: 2}
+  - {fileID: 11400000, guid: c76d4253f683a2c44a4086ff88e5b172, type: 2}

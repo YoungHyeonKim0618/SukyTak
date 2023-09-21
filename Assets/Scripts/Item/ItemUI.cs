@@ -1,23 +1,21 @@
 ﻿
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class ItemUI : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHandler
+public class ItemUI : MonoBehaviour,IPointerClickHandler, IBeginDragHandler,IDragHandler,IEndDragHandler,IPointerEnterHandler, IPointerExitHandler
 {
     private Item _item;
+    public Item Item => _item;
     [SerializeField] private Image _image;
     [SerializeField] 
     private TextMeshProUGUI _stackTmp;
 
     [SerializeField] private Image _stackTmpBackground;
 
-    private void Start()
-    {
-        GetComponent<Button>().onClick.AddListener(OnClick);
-    }
 
     public void SetItem(Item item)
     {
@@ -38,10 +36,10 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHand
             _stackTmpBackground.gameObject.SetActive(false);
         }
     }
-
-    public void OnClick()
+    
+    public void OnPointerClick(PointerEventData eventData)
     {
-        if(_draggingItemUi != this)
+        if(eventData.button == PointerEventData.InputButton.Right && _draggingItemUi == null)
         {
             if (_item != null)
             {
@@ -57,8 +55,16 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHand
     // ------------------------------------------------------------------------
     // 아이템 정보
     // ------------------------------------------------------------------------
-    
-    //TODO : Item의 GetString()을 호출해 설명을 Display한다.
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        Player.Instance.DisplayItem(_item, transform.position);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        Player.Instance.CloseDisplay();
+        //TODO : 사용으로 없어졌을 때 새로고침하기
+    }
     
     // ------------------------------------------------------------------------
     // 드래그 & 드롭으로 위치 변환
@@ -79,8 +85,10 @@ public class ItemUI : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHand
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        // 다른 ItemUI와 위치 바꾸기
+        Player.Instance.CheckItemUiBelow(this,eventData);
         _draggingItemUi = null;
     }
     
-    //TODO : 다른 ItemUI와 위치 변환
+
 }

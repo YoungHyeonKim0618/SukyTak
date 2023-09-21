@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 public class Player : MonoBehaviour
@@ -87,6 +88,26 @@ public class Player : MonoBehaviour
     {
         _inventory.DropItem(item);
         DisplayDropItem(item);
+    }
+
+    public void DisplayItem(Item item, Vector2 pos)
+    {
+        _inventory.DisplayItem(item,pos);
+    }
+
+    public void CloseDisplay()
+    {
+        _inventory.CloseDisplay();
+    }
+
+    public void CheckItemUiBelow(ItemUI caller, PointerEventData eventData)
+    {
+        _inventory.CheckItemUiBelow(caller,eventData);
+    }
+
+    public Vector2 GetWeaponDamage()
+    {
+        return new Vector2(_inventory.CurWeaponData.MinDmg,_inventory.CurWeaponData.MaxDmg);
     }
     
     
