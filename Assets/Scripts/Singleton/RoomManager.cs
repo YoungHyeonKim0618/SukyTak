@@ -21,10 +21,14 @@ public class RoomManager : MonoBehaviour
         
         // Room과 Floor들의 오브젝트 생성
         CreateBuilding();
+        SetMonsterCanvasSize();
         
         // 랜덤하게 방 구조 생성
         FindSideRoomDataSOs();
         InitBuilding();
+        
+        // 랜덤 적 생성
+        SpawnMonsters();
     }
 
     private void Start()
@@ -36,9 +40,11 @@ public class RoomManager : MonoBehaviour
     // ------------------------------------------------------------------------
     [Header("방들의 참조")] 
     [SerializeField] 
-    private Floor floorPrefab;
+    private Floor p_floor;
     [SerializeField] 
-    private Floor bottomFloorPrefab, topFloorPrefab;
+    private Floor p_bottomFloor, p_topFloor;
+
+    
     
     private Dictionary<RoomPosition, Room> _roomsDictionary = new Dictionary<RoomPosition, Room>();
 
@@ -48,20 +54,20 @@ public class RoomManager : MonoBehaviour
         float roomHeight = GameConstantsSO.Instance.RoomHeight;
         
         // 1층
-        var bottomFloor = Instantiate(bottomFloorPrefab, Vector3.zero, Quaternion.identity,_buildingRoot);
+        var bottomFloor = Instantiate(p_bottomFloor, Vector3.zero, Quaternion.identity,_buildingRoot);
         _roomsDictionary.Add(new RoomPosition(0,RoomDirection.CENTER),bottomFloor.Center);
 
         // 중간 층들
         for (int i = 1; i < maxFloor - 1; i++)
         {
-            var floor = Instantiate(floorPrefab, new Vector3(0, roomHeight * i, 0), Quaternion.identity,_buildingRoot);
+            var floor = Instantiate(p_floor, new Vector3(0, roomHeight * i, 0), Quaternion.identity,_buildingRoot);
             _roomsDictionary.Add(new RoomPosition(i,RoomDirection.LEFT),floor.Left);
             _roomsDictionary.Add(new RoomPosition(i,RoomDirection.CENTER),floor.Center);
             _roomsDictionary.Add(new RoomPosition(i,RoomDirection.RIGHT),floor.Right);
         }
 
         // 마지막 층
-        var topFloor = Instantiate(topFloorPrefab, new Vector3(0,roomHeight * (maxFloor-1), 0), Quaternion.identity,_buildingRoot);
+        var topFloor = Instantiate(p_topFloor, new Vector3(0,roomHeight * (maxFloor-1), 0), Quaternion.identity,_buildingRoot);
         _roomsDictionary.Add(new RoomPosition(maxFloor-1,RoomDirection.CENTER),topFloor.Center);
     }
 
@@ -71,6 +77,7 @@ public class RoomManager : MonoBehaviour
             return room;
         return null;
     }
+    
     
     
     // ------------------------------------------------------------------------
@@ -179,6 +186,47 @@ public class RoomManager : MonoBehaviour
     private void InitBottomRoom()
     {
         _roomsDictionary[new RoomPosition(0,RoomDirection.CENTER)].InitRoom();
+    }
+    
+    // ------------------------------------------------------------------------
+    // 랜덤 몬스터 생성
+    // ------------------------------------------------------------------------
+    [Header("Monster")]
+    [SerializeField] private RectTransform _monsterCanvas;
+
+    [SerializeField] private Monster p_zombie;
+
+    /*
+     * 몬스터의 부모가될 MonsterCanvas의 크기를 빌딩에 맞추는 메서드.
+     */
+    private void SetMonsterCanvasSize()
+    {
+        var data = GameConstantsSO.Instance;
+        _monsterCanvas.sizeDelta = new Vector2(data.RoomWidth * 3, data.RoomHeight * data.MaxFloor);
+        _monsterCanvas.position = new Vector3(0, 0, 0);
+    }
+
+    /*
+     * 랜덤으로 몬스터를 생성하고 배치하는 메서드.
+     */
+    private void SpawnMonsters()
+    {
+        //TODO : 디버그용, 랜덤 알고리즘
+        
+        SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(96,RoomDirection.CENTER)));
+        SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(97,RoomDirection.RIGHT)));
+    }
+
+    private void SpawnMonster(Monster monsterPrefab, Room room)
+    {
+        Monster monster = Instantiate(monsterPrefab,room.MonsterPos,Quaternion.identity, _monsterCanvas);
+        monster.InitMonster();
+        room.PlaceMonster(monster);
+    }
+
+    private Monster GetMonsterFromFloor(int floor)
+    {
+        return p_zombie;
     }
     
     // ------------------------------------------------------------------------

@@ -23,6 +23,9 @@ public class Room : MonoBehaviour
         
         // 아직 방문하지 않은 방을 어둡게 함.
         SetDarkImageAlpha(100);
+        
+        // MonsterSpot 초기화
+        InitMonsterSpot();
     }
     
     
@@ -236,10 +239,29 @@ public class Room : MonoBehaviour
     // ------------------------------------------------------------------------
     // 몬스터 정보
     // ------------------------------------------------------------------------
-    [Header("몬스터 정보")]
+    [Header("몬스터 정보")] [SerializeField]
+    private Vector2 _monsterPos;
     private List<Monster> _aliveMonsters = new List<Monster>();
 
-    public bool HasAliveMonsters => _aliveMonsters.Count > 0;
+    public Vector2 MonsterPos => _monsterPos;
+    public bool MonsterExists => _aliveMonsters.Count > 0;
+    public Monster Monster => MonsterExists ? _aliveMonsters[0] : null;
+    
+    private void InitMonsterSpot()
+    {
+        if (GetRoomPosition().direction == RoomDirection.LEFT)
+        {
+            _monsterPos = transform.position - new Vector3(-1, 0, 0);
+        }
+        else _monsterPos = transform.position + new Vector3(1, 0, 0);
+    }
+    
+    public void PlaceMonster(Monster monster)
+    {
+        _aliveMonsters.Add(monster);
+        monster.SetFlipX(GetRoomPosition().direction != RoomDirection.LEFT);
+
+    }
     
     
     // ------------------------------------------------------------------------

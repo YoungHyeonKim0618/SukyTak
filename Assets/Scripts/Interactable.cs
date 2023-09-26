@@ -18,7 +18,7 @@ public class Interactable : MonoBehaviour
     private Image _image;
 
     // Interactable이 아이템을 실제 가지고 있는지 여부는 Building 초기화 과정에서 정해진다.
-    public List<ItemDataSO> Rootables = new List<ItemDataSO>();
+    private List<ItemDataSO> _rootables = new List<ItemDataSO>();
     [SerializeField,DisableInInspector]
     private bool _rooted;
 
@@ -52,13 +52,12 @@ public class Interactable : MonoBehaviour
 
     public void AddRootable(ItemDataSO itemData)
     {
-        Rootables.Add(itemData);
+        _rootables.Add(itemData);
     }
 
     public void Interact()
     {
-        //TODO : 정해진 확률에 따라 DataSo의 PossibleItems 중 하나를 획득, 다시 Interact 못하게 비활성화.
-        if (Rootables.Count > 0 && !_rooted)
+        if (_rootables.Count > 0 && !_rooted)
         {
             StartCoroutine(Root());
         }
@@ -72,7 +71,7 @@ public class Interactable : MonoBehaviour
 
     private IEnumerator Root()
     {
-        foreach (var itemData in Rootables)
+        foreach (var itemData in _rootables)
         {
             Player.Instance.ObtainItem(itemData,transform.position);
             yield return new WaitForSeconds(0.3f);

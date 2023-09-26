@@ -2,9 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using Spine;
+using Spine.Unity;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Event = Spine.Event;
 
 public class Player : MonoBehaviour
 {
@@ -33,9 +36,19 @@ public class Player : MonoBehaviour
         
         // 위치 초기화
         InitPlayerPosition();
+        SetMovable(true);
+        
+        // 애니메이션 Idle로 초기화
+        SetAnimationState("Idle");
         
         //TODO : 디버그용 메서드 삭제
         _onMoveChannel.OnEventRaised += PrintOnEnterRoom;
+
+        // 플레이어의 스파인 이벤트 동기화 (공격)
+        RegisterSpineEvent();
+        
+        // 플레이어 스탯 초기화
+        _status.InitStatus();
     }
 
     private void InitPlayerPosition()
@@ -55,11 +68,14 @@ public class Player : MonoBehaviour
     // ------------------------------------------------------------------------
 
     [Header("스탯")] private PlayerStatus _status;
+    public PlayerStatus Status => _status;
     [SerializeField] private ExpPerLevelDataSO _expPerLevelData;
 
     public void ModifyHp(float value)
     {
         _status.CurHp += value;
+        _skeleton.loop = false;
+        _skeleton.AnimationName = "BeAttacked";
     }
 
     public void ModifySatiety(float value)
@@ -117,6 +133,7 @@ public class Player : MonoBehaviour
     [Header("현재 위치 정보")] [SerializeField, DisableInInspector]
     private Room _currentRoom;
     private RoomPosition CurrentRoomPosition => _currentRoom.GetRoomPosition();
+    
 
     
     // ------------------------------------------------------------------------
@@ -136,6 +153,8 @@ public class Player : MonoBehaviour
     // 이동
     // ------------------------------------------------------------------------
     [Header("이동")]
+    // 현재 공격중이거나 공격받는 상황이 아니라서 이동할 수 있는지
+    private bool _movable;
     
     [Tooltip("방 클릭 시 Invoke되는 이벤트 채널"), SerializeField]
     private RoomEventChannelSO _onTryMoveChannel;
@@ -164,6 +183,10 @@ public class Player : MonoBehaviour
      */
     private void TryMove(Room destination)
     {
+        // 움직일 수 없는 상황이라면 아무것도 하지 않음
+        if (!_movable) return;
+        
+        
         // 목적지와 현재 위치가 다를 때에만 작동
         //TODO : 이동 중이라면 위치가 같더라도 되돌아올 수 있게 하기.
         if (destination.GetRoomPosition() != CurrentRoomPosition)
@@ -313,8 +336,12 @@ public class Player : MonoBehaviour
         {
             yield return null;
         }
-        // 위치를 방의 기준점으로 초기화
-        //SyncPlayerPosWithRoom();
+        
+        //TODO : 배틀 중이라면, 적에게 공격 기회를 줌.
+        yield return _battleManager.RunFromMonster();
+        
+        // Walk 애니메이션으로 바꿈
+        SetAnimationState("Walk");
         
         RoomSpot direction;
         while (_routesQueue.TryDequeue(out direction))
@@ -323,8 +350,10 @@ public class Player : MonoBehaviour
             yield return _moveCoroutine;
             _moveCoroutine = null;
         }
-
         _moveRoomLoopCoroutine = null;
+        
+        // Idle 애니메이션으로 바꿈
+        SetAnimationState("Idle");
     }
 
     /*
@@ -350,7 +379,31 @@ public class Player : MonoBehaviour
     {
         _headingRoomSpot = spot;
         
-        //TODO : 애니메이션과 x축 반전 설정
+        // X축 반전 설정
+        Vector2 spotPos = spot.transform.position;
+        Vector2 pos = transform.position;
+        SetSkeletonDirection(spotPos.x >= pos.x);
+        
+        // 애니메이션 설정
+        //TODO : 이동 도중 클릭하면 애니메이션이 바뀌는 현상 수정
+        if (spot.Host.GetRoomPosition().direction == RoomDirection.CENTER && Mathf.Abs(spotPos.y - pos.y) > float.Epsilon)
+        {
+            // 계단을 올라갈 때
+            if (spotPos.y > pos.y)
+            {
+                SetAnimationState("StairUp");
+            }
+            // 계단을 내려갈 때
+            else
+            {
+                SetAnimationState("StairDown");
+            }
+        }
+        else
+        {
+            SetAnimationState("Walk");
+        }
+
         
         // Divide by 0을 막기 위해 최소값을 지정함
         float spd = Mathf.Max(_moveSpeed, 0.01f);
@@ -361,7 +414,7 @@ public class Player : MonoBehaviour
         float movingTime = toGo.magnitude / spd;
 
         
-        //TODO : 게임 배속을 spd에 적용시키기
+        //TODO : 게임 배속을 spd와 애니메이션에 적용시키기
 
         yield return transform.DOMove(destination, movingTime).SetEase(Ease.Linear).WaitForCompletion();
         _headingRoomSpot = null;
@@ -385,11 +438,12 @@ public class Player : MonoBehaviour
     private void ChangeRoom(Room room)
     {
         _currentRoom.Exit();
+        if(_currentRoom.MonsterExists) LeaveMonsterRoom();
+        
         room.Enter();
-
         _currentRoom = room;
-            
         _onMoveChannel.OnRaise(room);
+        if(room.MonsterExists) EnterMonsterRoom(room.Monster);
     }
 
     /*
@@ -406,13 +460,74 @@ public class Player : MonoBehaviour
         transform.position = _currentRoom.spots[0].transform.position;
     }
     
+    
+    // ------------------------------------------------------------------------
+    // 전투 
+    // ------------------------------------------------------------------------
+    [Header("전투")] [SerializeField] 
+    private PlayerBattleManager _battleManager;
+
+    private void EnterMonsterRoom(Monster monster)
+    {
+        _battleManager.EncounterMonster(monster);
+    }
+
+    private void LeaveMonsterRoom()
+    {
+        _battleManager.LeaveMonster();
+    }
+
+    public void SetMovable(bool movable)
+    {
+        _movable = movable;
+    }
+
+    public void OpenHitSelectionPanel(Monster monster)
+    {
+        _battleManager.OpenHitSelectionPanel(monster);
+    }
+
+    public void PlayerAttack(MonsterHitInfo hitInfo)
+    {
+        _battleManager.PlayerAttack(hitInfo);
+    }
+    
+    // ------------------------------------------------------------------------
+    // 애니메이션
+    // ------------------------------------------------------------------------
+    [Header("Animation")] [SerializeField] private SkeletonAnimation _skeleton;
+
+    public void SetAnimationState(string state)
+    {
+        _skeleton.AnimationName = state;
+    }
+
+    public void SetAnimationLoop(bool loop)
+    {
+        _skeleton.loop = loop;
+    }
+
+    private void SetSkeletonDirection(bool right)
+    {
+        _skeleton.skeleton.ScaleX = right ? 1 : -1;
+    }
+    
+    /*
+     * 플레이어의 스파인 이벤트에 리스너를 등록하는 메서드.
+     * 게임 시작 시 실행된다.
+    */
+    private void RegisterSpineEvent()
+    {
+        _skeleton.AnimationState.Event += _battleManager.OnSpineEventRaised;
+    }
+    
     // ------------------------------------------------------------------------
     // 초기화
     // ------------------------------------------------------------------------
     [Header("UI")]
     [SerializeField] private Canvas _playerCanvas;
     // 아이템 획득/상실 시에 UI 생성을 위한 이미지 프리팹.
-    [SerializeField] private Image p_ItemImage;
+    [SerializeField] private Image p_itemImage;
     [SerializeField] private float _itemImageOffsetY;
 
     private void DisplayObtainItem(ItemDataSO itemData, Vector2 pos)
@@ -420,7 +535,7 @@ public class Player : MonoBehaviour
         // pos가 (0,0)이라면 기본 값이라고 간주, 플레이어 포지션으로 생각함.
         Vector2 startingPos = pos == Vector2.zero ? transform.position + new Vector3(0,1,0) : pos;
         
-        var newImage = Instantiate(p_ItemImage,startingPos,Quaternion.identity,_playerCanvas.transform);
+        var newImage = Instantiate(p_itemImage,startingPos,Quaternion.identity,_playerCanvas.transform);
         newImage.sprite = itemData.Sprite;
         newImage.rectTransform.DOMoveY(startingPos.y + 1, 0.5f);
         Destroy(newImage.gameObject, 0.75f);
@@ -430,13 +545,23 @@ public class Player : MonoBehaviour
     {
         Vector2 startingPos =transform.position + new Vector3(0,1,0);
         
-        var newImage = Instantiate(p_ItemImage,startingPos,Quaternion.identity,_playerCanvas.transform);
+        var newImage = Instantiate(p_itemImage,startingPos,Quaternion.identity,_playerCanvas.transform);
         newImage.sprite = item.Data.Sprite;
         newImage.rectTransform.DOMoveY(startingPos.y + 1, 0.5f);
         Destroy(newImage.gameObject, 0.75f);
     }
     
     
+    
+    // ------------------------------------------------------------------------
+    // 사망
+    // ------------------------------------------------------------------------
+
+    public void Die()
+    {
+        //TODO : 사망 애니메이션 실행
+        //TODO : 2초가량 후에 메인 화면으로 가는 버튼 생성
+    }
     
     // ------------------------------------------------------------------------
     // 디버그

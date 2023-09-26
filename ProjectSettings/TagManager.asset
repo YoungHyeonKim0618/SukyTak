@@ -41,6 +41,12 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: InRoom
+    uniqueID: 823343489
+    locked: 0
+  - name: RoomFog
+    uniqueID: 677775093
+    locked: 0
   - name: Player
     uniqueID: 4133079361
     locked: 0

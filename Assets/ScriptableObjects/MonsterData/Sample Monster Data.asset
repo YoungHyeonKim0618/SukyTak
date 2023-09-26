@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: Sample Monster Data
   m_EditorClassIdentifier: 
   ID: 
-  MaxHP: 0
-  Damage: 0
+  MaxHP: 100
+  MinDamage: 2
+  MaxDamage: 5
+  CritChance: 15
   HitInfos:
   - hitSprite: {fileID: 21300000, guid: fec3d8c657836ca4ca4bb6ebcffe1280, type: 3}
     dmgCoefficient: 200
@@ -25,3 +27,4 @@ MonoBehaviour:
   - hitSprite: {fileID: 21300000, guid: 55757d6f0e281aa4ea96ce4dfffa90d8, type: 3}
     dmgCoefficient: 100
     hitChance: 80
+  ExpPerDifficulty: 

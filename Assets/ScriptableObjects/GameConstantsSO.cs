@@ -24,11 +24,27 @@ public class GameConstantsSO : ScriptableObject
         }
     }
 
+    [Header("게임 설정")]
     public int MaxFloor;
     public float RoomWidth;
     public float RoomHeight;
-    public float RottenFoodDmg;
 
+    public float MaxSatiety;
+
+    [Header("플레이어 기본 스탯")] 
+    public float DefaultMaxHP;
+
+    public float DefaultCritChance;
+    public float DefaultAdditionalAttackChance;
+    public float DefaultDodgeChance;
+    public float DefaultDamageReduction;
+    
+    [Header("밸런스")]
+    public float RottenFoodDmg;
+    [Tooltip("몬스터가 선공을 가할 확률 (%)")]
+    public float MonsterAttackFirstChance;
+
+    [Header("난이도별 변수")]
     public List<float> RootChancePerDifficulty;
     public float GetRootChanceFromDifficulty(GameDifficulty difficulty)
     {

@@ -190,13 +190,14 @@ public class PlayerInventory : MonoBehaviour
             ItemUI itemUi = result.gameObject.GetComponent<ItemUI>();
             if (itemUi != null && itemUi != caller)
             {
+                /*
+                 * 이들의 부모 오브젝트가 Grid Layout Group을 가지고 있기 때문에 자식 순서를 바꾸면 위치도 바뀜.
+                 */
                 int myIndex = itemUi.transform.GetSiblingIndex();
                 int otherIndex = caller.transform.GetSiblingIndex();
             
                 itemUi.transform.SetSiblingIndex(otherIndex);
                 caller.transform.SetSiblingIndex(myIndex);
-
-                GridLayoutGroup grid = itemUi.transform.parent.GetComponent<GridLayoutGroup>();
                 return;
             }
         }

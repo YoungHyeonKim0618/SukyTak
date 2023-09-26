@@ -9,9 +9,12 @@ public class MonsterDataSO : ScriptableObject
     public string ID;
 
     public float MaxHP;
-    public float Damage;
+    public float MinDamage;
+    public float MaxDamage;
+    public float CritChance;
     
     public List<MonsterHitInfo> HitInfos;
+    public List<int> ExpPerDifficulty;
 }
 
 [Serializable]

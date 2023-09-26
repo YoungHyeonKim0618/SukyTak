@@ -15,7 +15,14 @@ MonoBehaviour:
   MaxFloor: 100
   RoomWidth: 5
   RoomHeight: 4
+  MaxSatiety: 100
+  DefaultMaxHP: 100
+  DefaultCritChance: 50
+  DefaultAdditionalAttackChance: 0
+  DefaultDodgeChance: 0
+  DefaultDamageReduction: 0
   RottenFoodDmg: 8
+  MonsterAttackFirstChance: 15
   RootChancePerDifficulty:
   - 77.5
   - 70

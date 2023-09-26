@@ -27,7 +27,11 @@ public class PlayerStatus
  public float CurHp
  {
   get { return _curHp; }
-  set { _curHp = value; }
+  set
+  {
+   _curHp = value;
+   if(_curHp <= 0 )Player.Instance.Die();
+  }
  }
 
  public float CurSatiety
@@ -128,5 +132,16 @@ public class PlayerStatus
  {
   get { return _dmgReduction + _dmgReductionModification; }
   set { _dmgReductionModification = value - _dmgReduction; }
+ }
+
+ public void InitStatus()
+ {
+  _maxHp = GameConstantsSO.Instance.DefaultMaxHP;
+  _curHp = _maxHp;
+
+  _critChance = GameConstantsSO.Instance.DefaultCritChance;
+  _additionalAttackChance = GameConstantsSO.Instance.DefaultAdditionalAttackChance;
+  _dodge = GameConstantsSO.Instance.DefaultDodgeChance;
+  _dmgReduction = GameConstantsSO.Instance.DefaultDamageReduction;
  }
 }
