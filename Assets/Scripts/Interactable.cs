@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 using Button = UnityEngine.UI.Button;
@@ -16,6 +17,37 @@ public class Interactable : MonoBehaviour
     public InteractableDataSO MyDataSo;
 
     private Image _image;
+
+    
+    
+    // ------------------------------------------------------------------------
+    // 활성화 / 비활성화 
+    // ------------------------------------------------------------------------
+    
+    // 활성화되어있는지 여부 변수. 
+    private bool _activated;
+    public bool Activated => _activated;
+    
+    // 클릭 가능할 때 활성화되는 눈 모양 이미지. MyDataSo.IsInteractable == true 일 때에만 null이 아님
+    private Image _activatedImage;
+
+    public void Activate()
+    {
+        if (MyDataSo.IsInteractable && !_rooted)
+        {
+            _activated = true;
+            _activatedImage.gameObject.SetActive(true);
+        }
+    }
+
+    public void Deactivate()
+    {
+        if (MyDataSo.IsInteractable)
+        {
+            _activated = false;
+            _activatedImage.gameObject.SetActive(false);
+        }
+    }
 
     // Interactable이 아이템을 실제 가지고 있는지 여부는 Building 초기화 과정에서 정해진다.
     private List<ItemDataSO> _rootables = new List<ItemDataSO>();
@@ -47,6 +79,19 @@ public class Interactable : MonoBehaviour
             Vector2 buttonSize = new Vector2(MyDataSo.Sprite.texture.width, MyDataSo.Sprite.texture.height) / ppu;
             GetComponent<RectTransform>().sizeDelta = buttonSize;
             
+            if(dataSO.IsInteractable)
+            {
+                // 상호작용 가능하다면 눈 이미지 생성
+                var go = new GameObject();
+                Image image = go.AddComponent<Image>();
+                image.transform.SetParent(transform);
+                image.transform.localPosition = Vector3.zero;
+                image.raycastTarget = false;
+                image.sprite = GameConstantsSO.Instance.InteractaleActivatedSprite;
+                image.rectTransform.sizeDelta = new Vector2(0.5f, 0.5f);
+
+                _activatedImage = image;
+            }
         }
     }
 
@@ -66,6 +111,8 @@ public class Interactable : MonoBehaviour
         if (MyDataSo.SpriteAfterInteraction != null)
             _image.sprite = MyDataSo.SpriteAfterInteraction;
         
+        _activatedImage.gameObject.SetActive(false);
+            
         _rooted = true;
     }
 

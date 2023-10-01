@@ -13,21 +13,26 @@ MonoBehaviour:
   m_Name: GameConstantsSO_Instance
   m_EditorClassIdentifier: 
   MaxFloor: 100
-  RoomWidth: 5
+  CenterRoomWidth: 5
+  SideRoomWidth: 6
   RoomHeight: 4
   MaxSatiety: 100
+  ElevatorWorkingChance: 30
+  FuseBoxWorkingChance: 100
+  FuseBoxFixChance: 75
   DefaultMaxHP: 100
   DefaultCritChance: 50
   DefaultAdditionalAttackChance: 0
   DefaultDodgeChance: 0
   DefaultDamageReduction: 0
   RottenFoodDmg: 8
-  MonsterAttackFirstChance: 15
+  MonsterAttackFirstChance: 100
   RootChancePerDifficulty:
   - 77.5
   - 70
   - 62.5
   - 55
+  InteractaleActivatedSprite: {fileID: 21300000, guid: 073048863fd145e4492a8a52f7aaeb02, type: 3}
   _rootableItems:
   - {fileID: 11400000, guid: ad182df58ff056243bec07b49ca53e59, type: 2}
   - {fileID: 11400000, guid: c76d4253f683a2c44a4086ff88e5b172, type: 2}

@@ -31,7 +31,7 @@ public class HitTextDisplay : MonoBehaviour
         } 
         else tmp.text = $"빗나감!";
         
-        tmp.rectTransform.DOMoveY(worldPos.y + 1, 0.5f);
+        tmp.rectTransform.DOMoveY(worldPos.y + 2, 0.5f);
         Destroy(tmp.gameObject,1f);
     }
 }

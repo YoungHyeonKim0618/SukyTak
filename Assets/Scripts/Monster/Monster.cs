@@ -23,7 +23,7 @@ public class Monster : MonoBehaviour
     
     
     private float _hp;
-    private float Hp
+    public float Hp
     {
         get => _hp;
         set
@@ -31,6 +31,7 @@ public class Monster : MonoBehaviour
             // 0.0 단위까지 표기되기 때문에 표기된 값과 다른 결과를 내는 것 방지
             if (value <= 0.1f - float.Epsilon)
             {
+                _hp = 0;
                 StartDie();
             }
             else _hp = value;
@@ -78,8 +79,11 @@ public class Monster : MonoBehaviour
     public void SetDamage(float dmg)
     {
         Hp -= dmg;
-        _skeletonAnimation.loop = false;
-        _skeletonAnimation.AnimationName = "BeAttacked";
+        if(_alive)
+        {
+            _skeletonAnimation.loop = false;
+            _skeletonAnimation.AnimationName = "BeAttacked";
+        }
     }
 
     /*
@@ -90,13 +94,12 @@ public class Monster : MonoBehaviour
      */
     private void StartDie()
     {
+        print("Monster Start Die!");
         _alive = false;
         _skeletonAnimation.loop = false;
-        _skeletonAnimation.AnimationName = "MonsterDie";
+        _skeletonAnimation.AnimationName = "Die";
         
         //TODO : 상호작용 비활성화
-        
-        
     }
 
     /*
@@ -104,7 +107,7 @@ public class Monster : MonoBehaviour
      */
     public void Die()
     {
-        
+        print("Monster real die!");
         //TODO : 상호작용 활성화
         //TODO : 클릭 시 아이템 루팅
     }

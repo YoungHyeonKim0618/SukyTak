@@ -7,6 +7,7 @@ using UnityEngine;
 public class MonsterDataSO : ScriptableObject
 {
     public string ID;
+    public Sprite HeadSprite;
 
     public float MaxHP;
     public float MinDamage;

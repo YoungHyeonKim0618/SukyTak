@@ -28,7 +28,6 @@ public class Player : MonoBehaviour
     // ------------------------------------------------------------------------
     private void Init()
     {
-        _status = new PlayerStatus(_expPerLevelData);
         //TODO : 이전 씬에서 선택한 패시브/액티브 특성 효과 적용
         
         // 이벤트 채널 등록
@@ -67,7 +66,8 @@ public class Player : MonoBehaviour
     // 현재 상태 (스탯) 정보
     // ------------------------------------------------------------------------
 
-    [Header("스탯")] private PlayerStatus _status;
+    [Header("스탯")] [SerializeField]
+    private PlayerStatus _status;
     public PlayerStatus Status => _status;
     [SerializeField] private ExpPerLevelDataSO _expPerLevelData;
 
@@ -78,7 +78,7 @@ public class Player : MonoBehaviour
         _skeleton.AnimationName = "BeAttacked";
     }
 
-    public void ModifySatiety(float value)
+    public void ModifySatiety(int value)
     {
         _status.CurSatiety += value;
     }
@@ -133,6 +133,7 @@ public class Player : MonoBehaviour
     [Header("현재 위치 정보")] [SerializeField, DisableInInspector]
     private Room _currentRoom;
     private RoomPosition CurrentRoomPosition => _currentRoom.GetRoomPosition();
+    public Room CurrentRoom => _currentRoom;
     
 
     
@@ -175,6 +176,10 @@ public class Player : MonoBehaviour
     // 현재 향하고 있는 RoomSpot (이동 중이 아니라면 null)
     [SerializeField, DisableInInspector]
     private RoomSpot _headingRoomSpot;
+    
+    // 방문한 최저 층
+    private int _lowestFloorVisited = Int32.MaxValue;
+    public int LowestFloorVisited => _lowestFloorVisited;
 
     /*
      * 현재 방이 아닌 다른 방 클릭 시 발생되는 이벤트로부터 Invoke되는 메서드.
@@ -337,7 +342,9 @@ public class Player : MonoBehaviour
             yield return null;
         }
         
-        //TODO : 배틀 중이라면, 적에게 공격 기회를 줌.
+        // 배틀 중이라면, 적에게 공격 기회를 줌.
+        //TODO : Center Room에서 전투 주일 때 하/좌/우 클릭해도 공격 기회 주지 않게 하기
+        //TODO : 현재 문제는 center[0] 위치에서 center[1]을 거치기 때문에 위를 향하는지 아래를 향하는지 알 수 없음.
         yield return _battleManager.RunFromMonster();
         
         // Walk 애니메이션으로 바꿈
@@ -346,6 +353,28 @@ public class Player : MonoBehaviour
         RoomSpot direction;
         while (_routesQueue.TryDequeue(out direction))
         {
+            // 만약 Center Room이고 몬스터가 있다면, 하/좌/우 이동을 막는다.
+            if (_currentRoom.GetRoomPosition().direction == RoomDirection.CENTER && _currentRoom.MonsterExists)
+            {
+                if (_currentRoom != direction.Host &&
+                    direction.transform.position.y <= transform.position.y + float.Epsilon)
+                {
+                    //TODO : 플레이어가 '지금은 갈 수 없다'는 메세지 표시
+                    _routesQueue.Clear();
+                    
+                    // 만약 현재 Center Room의 RoomSpot[0] 이 아니라면 그 위치로 이동한다.
+                    if (((Vector2)transform.position - (Vector2)_currentRoom.spots[0].transform.position).magnitude >
+                        float.Epsilon)
+                    {
+                        direction = _currentRoom.spots[0];
+                        _moveCoroutine = StartCoroutine(MoveToward(direction));
+                        yield return _moveCoroutine;
+                        _moveCoroutine = null;
+                    }
+                    break;
+                }
+            }
+            
             _moveCoroutine = StartCoroutine(MoveToward(direction));
             yield return _moveCoroutine;
             _moveCoroutine = null;
@@ -438,12 +467,26 @@ public class Player : MonoBehaviour
     private void ChangeRoom(Room room)
     {
         _currentRoom.Exit();
+        // 몬스터가 있는 방에서 나갈 때엔 공격 기회 줌
         if(_currentRoom.MonsterExists) LeaveMonsterRoom();
+        // 이전 방의 Interactable 비활성화
+        else _currentRoom.DeactivateInteractables();
         
         room.Enter();
         _currentRoom = room;
         _onMoveChannel.OnRaise(room);
-        if(room.MonsterExists) EnterMonsterRoom(room.Monster);
+        if(room.MonsterExists)
+        {
+            EnterMonsterRoom(room.Monster);
+            room.DeactivateInteractables();
+        }
+        else room.ActivateInteractables();
+
+        // 방 이동 시 포만도 - 1
+        _status.CurSatiety -= 1;
+        // 내려간 최저 층 갱신
+        if (room.GetRoomPosition().floor < _lowestFloorVisited)
+            _lowestFloorVisited = room.GetRoomPosition().floor;
     }
 
     /*

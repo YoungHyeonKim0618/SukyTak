@@ -13,8 +13,8 @@ public class RoomDataSOEditor : Editor
     // ------------------------------------------------------------------------
     private RoomDataSO _data;
 
-    private float _width = 350;
-    private float _height = 280;
+    private float _width = 360;
+    private float _height = 240;
     
     // 바로 위의 Layout과의 거리
     private float yOffset = 20;
@@ -48,7 +48,7 @@ public class RoomDataSOEditor : Editor
     }
 
     /*
-     * 인스펙터 상에서 가로 250, 세로 200 크기의 Preview 생성.
+     * 인스펙터 상에서 가로 360, 세로 240 크기의 Preview 생성.
      */
     private void DrawVisualObjects()
     {
@@ -74,9 +74,9 @@ public class RoomDataSOEditor : Editor
                 {
                     /*
                      * 위치를 비율에 맞게 조절해야 한다.
-                     * 현재 방의 캔버스 월드 사이즈가 (5,4)라고 하면, 가로는 width/5, 세로는 height/4 를 곱해야 함.
+                     * 현재 방의 캔버스 월드 사이즈가 (6,4)라고 하면, 가로는 width/6, 세로는 height/4 를 곱해야 함.
                      */
-                    Vector2 roomSize = new Vector2(GameConstantsSO.Instance.RoomWidth,
+                    Vector2 roomSize = new Vector2(GameConstantsSO.Instance.SideRoomWidth,
                         GameConstantsSO.Instance.RoomHeight);
                     
                     Vector2 pos = previewCenter + new Vector2(vo.position.x * _width / roomSize.x,

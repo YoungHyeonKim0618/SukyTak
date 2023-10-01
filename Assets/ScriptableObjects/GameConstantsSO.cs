@@ -26,10 +26,17 @@ public class GameConstantsSO : ScriptableObject
 
     [Header("게임 설정")]
     public int MaxFloor;
-    public float RoomWidth;
+    public float CenterRoomWidth;
+    public float SideRoomWidth;
+    public float FloorWidth => 2 * SideRoomWidth + CenterRoomWidth;
     public float RoomHeight;
 
-    public float MaxSatiety;
+    public int MaxSatiety;
+
+    [Header("가운데 방 설정")]
+    public float ElevatorWorkingChance;
+    public float FuseBoxWorkingChance;
+    public float FuseBoxFixChance;
 
     [Header("플레이어 기본 스탯")] 
     public float DefaultMaxHP;
@@ -67,7 +74,9 @@ public class GameConstantsSO : ScriptableObject
 
         return ret;
     }
-    
+
+    [Header("글로벌 에셋")]
+    public Sprite InteractaleActivatedSprite;
     
     [SerializeField] private List<ItemDataSO> _rootableItems;
     public ItemDataSO GetRandomRootableItem()

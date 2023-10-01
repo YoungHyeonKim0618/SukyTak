@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ID: yasuo
   Name: "\uC57C\uC2A4\uC624"
-  Sprite: {fileID: 21300000, guid: 31ef1e25a819cb44d82be1678f33a183, type: 3}
+  Sprite: {fileID: 21300000, guid: 660ba19c0275d3c4fa208c40828275a5, type: 3}
   Type: 4
   Stackable: 1
   Recipes: []

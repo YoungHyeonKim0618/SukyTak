@@ -1,8 +1,10 @@
 ﻿
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Spine;
 using Spine.Unity;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,6 +24,7 @@ public class PlayerBattleManager : MonoBehaviour
         UnblockRaycast();
         CloseHitSelectionPanel();
         HideEquippedWeapons();
+        HideMonsterUi();
     }
 
     public void BlockRaycast()
@@ -51,7 +54,14 @@ public class PlayerBattleManager : MonoBehaviour
     public void EncounterMonster(Monster monster)
     {
         _facingMonster = monster;
+        
+        // 무기 정보 표시
         DisplayEquippedWeapons();
+        
+        // 적의 정보 표시
+        SetMonsterUi(_facingMonster);
+        ShowMonsterUi();
+        
         RegisterMonsterSpineEvent(monster);
         
         _facingMonster.SkeletonAnimation.loop = true;
@@ -64,9 +74,18 @@ public class PlayerBattleManager : MonoBehaviour
     // 살아있는 몬스터가 있는 방을 나가거나, 모든 몬스터를 죽였을 때 호출되는 메서드
     public void LeaveMonster()
     {
+        // 무기 정보 가림
         HideEquippedWeapons();
+        
+        // 적의 정보 가림
+        HideMonsterUi();
         RemoveMonsterSpineEvent(_facingMonster);
-        _facingMonster.SkeletonAnimation.ClearState();
+        
+        // 살아있는 적을 떠날 때만 애니메이션을 Clear함.
+        if(_facingMonster.Alive)
+        {
+            _facingMonster.SkeletonAnimation.ClearState();
+        }
         
         // 현재 위의 Spine 관련 코드가 바로 적용되지 않아서 NullException이 나옴
         //_facingMonster = null;
@@ -132,7 +151,6 @@ public class PlayerBattleManager : MonoBehaviour
     private void PlayerHit()
     {
         bool hit = Random.Range(0, 100) < _selectedHitInfo.hitChance;
-        print($"chance : {_selectedHitInfo.hitChance}, hit : {hit}");
 
         // 공격 적중시
         if (hit)
@@ -140,14 +158,18 @@ public class PlayerBattleManager : MonoBehaviour
             Vector2 weaponDmg = Player.Instance.GetWeaponDamage();
             float coef = _selectedHitInfo.dmgCoefficient * 0.01f;
             float dmg = Random.Range(weaponDmg.x * coef, weaponDmg.y * coef);
+            
+            bool crit = Random.Range(0,100) < Player.Instance.Status.CritChance;
+            dmg = crit ? dmg * 1.5f : dmg;
+            
             _facingMonster.SetDamage(dmg);
 
             Vector3 vec3 = _facingMonster.transform.position + new Vector3(0, 1, 0);
             
-            bool crit = Random.Range(0,100) < Player.Instance.Status.CritChance;
-            dmg = crit ? dmg * 1.5f : dmg;
             vec3.z = crit ? 1 : -1;
             _channel.OnEventRaised(dmg, vec3);
+            
+            RefreshMonsterUi();
         }
         // 공격 미적중시
         else
@@ -248,13 +270,11 @@ public class PlayerBattleManager : MonoBehaviour
         // 플레이어 공격 애니메이션의 끝. 다른 방이나 몬스터와의 상호작용을 활성화한다.
         else if (e.Data.Name == "PlayerEndAttack")
         {
-            print("Player End Attack!");
             Player.Instance.SetAnimationLoop(true);
             Player.Instance.SetAnimationState("Idle");
             // 몬스터가 이미 사망했다면 몬스터 사망 애니메이션이 끝날 때 활성화됨.
             if(_facingMonster.Alive)
             {
-                print("Enemy still alive");
                 Player.Instance.SetMovable(true);
                 _facingMonster.SetClickable(true);
             
@@ -266,7 +286,6 @@ public class PlayerBattleManager : MonoBehaviour
         // 몬스터 공격 애니메이션의 끝.
         else if (e.Data.Name == "MonsterEndAttack")
         {
-            print("Monster End Attack!");
             Player.Instance.SetMovable(true);
             _facingMonster.SetClickable(true);
             
@@ -278,11 +297,14 @@ public class PlayerBattleManager : MonoBehaviour
         // 몬스터의 사망 애니메이션의 끝.
         else if (e.Data.Name == "MonsterDie")
         {
-            print("Monster Die!");
             Player.Instance.SetMovable(true);
             _facingMonster.SetClickable(true);
             _facingMonster.Die();
+            
+            // 현재 방의 AliveMonster에서 없앰.
+            Player.Instance.CurrentRoom.RemoveMonster(_facingMonster);
             EndBattle();
+            Player.Instance.CurrentRoom.ActivateInteractables();
         }
     }
     //TODO : 플레이어와 적 사망 시...
@@ -315,5 +337,40 @@ public class PlayerBattleManager : MonoBehaviour
     {
         _hitSelectionPanel.gameObject.SetActive(false);
     }
+    
+    // ------------------------------------------------------------------------
+    // 몬스터 UI
+    // ------------------------------------------------------------------------
+    [Header("몬스터 UI")] [SerializeField] private Transform _monsterUiRoot;
+    [SerializeField] private List<Image> _monsterHpBars;
+    [SerializeField] private TextMeshProUGUI _monsterHpTmp;
+    [SerializeField] private Image _monsterIcon;
 
+    private void ShowMonsterUi()
+    {
+        _monsterUiRoot.gameObject.SetActive(true);
+    }
+
+    private void HideMonsterUi()
+    {
+        _monsterUiRoot.gameObject.SetActive(false);
+    }
+
+    private void SetMonsterUi(Monster monster)
+    {
+        RefreshMonsterUi();
+        _monsterIcon.sprite = monster.Data.HeadSprite;
+    }
+
+    private void RefreshMonsterUi()
+    {
+        if (_facingMonster != null)
+        {
+            foreach (var image in _monsterHpBars)
+            {
+                image.fillAmount = _facingMonster.Hp / _facingMonster.Data.MaxHP;
+            }
+            _monsterHpTmp.text = $"{_facingMonster.Hp:0.#} / {_facingMonster.Data.MaxHP:0.#}";
+        }
+    }
 }

@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using TMPro;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -155,10 +156,36 @@ public class Room : MonoBehaviour
     {
         _entireButton.gameObject.SetActive(enable);
     }
+
+    /*
+     * 상호작용 가능한 Interactable들을 활성화하는 메서드.
+     * 몬스터가 없는 방에 들어가거나, 몬스터를 죽일 때 호출된다.
+     */
+    public void ActivateInteractables()
+    {
+        foreach (var interactable in _interactables)
+        {
+            interactable.Activate();
+        }
+    }
+
+    public void DeactivateInteractables()
+    {
+        foreach (var interactable in _interactables)
+        {
+            interactable.Deactivate();
+        }
+    }
+    
+    
     
     // ------------------------------------------------------------------------
     // Initiation (Side Rooms)
     // ------------------------------------------------------------------------
+    [Header("초기화")] [SerializeField]
+    private Image p_interactableActivated;
+
+    private List<Interactable> _interactables = new List<Interactable>();
     
     private RoomDataSO _dataSO;
     public void SetRoomData(RoomDataSO dataSO)
@@ -172,7 +199,6 @@ public class Room : MonoBehaviour
             Interactable interactable = newGameObject.AddComponent<Interactable>();
             interactable.transform.localScale = Vector3.one;
             interactable.transform.SetParent(_interactableRootRectTransform);
-            interactable.transform.SetSiblingIndex(0);
             interactable.InitInteractable(vo.interactableSo);
             
             // 어떤 아이템을 가지고 있는지를 정해줌.
@@ -201,6 +227,7 @@ public class Room : MonoBehaviour
 
             interactable.transform.localPosition = new Vector3(vo.position.x, -vo.position.y);
             interactable.transform.localScale = vo.scale;
+            _interactables.Add(interactable);
         }
     }
     
@@ -210,7 +237,37 @@ public class Room : MonoBehaviour
     // Initiation (Center Rooms)
     // ------------------------------------------------------------------------
 
-    public void InitCenterRoom()
+    [Header("가운데 방 초기화 (Side Room은 참조할 필요 없음)")]
+    [SerializeField] private Button _elevator;
+    [SerializeField] private Sprite _elevatorWorkingSprite, _elevatorBrokenSprite;
+    [SerializeField] private TextMeshProUGUI _floorTmp;
+
+    public void SetCenterRoom(int floor, bool elevator)
+    {
+        SetFloorText(floor);
+        SetElevator(elevator);
+    }
+    private void SetFloorText(int floor)
+    {
+        _floorTmp.text = $"{floor}";
+    }
+
+    /*
+     * 엘레베이터가 사용 가능한지 여부 설정
+     */
+    private void SetElevator(bool working)
+    {
+        _elevator.interactable = working;
+        _elevator.image.sprite = working ? _elevatorWorkingSprite : _elevatorBrokenSprite;
+        // 엘리베이터 클릭 시 이벤트에 패널을 여는 메서드를 등록
+        if(working)
+            _elevator.onClick.AddListener(RoomManager.Instance.OpenElevatorPanel);
+    }
+
+    /*
+     * 두꺼비집이 멀쩡한지 여부 설정 (5층 단위 층에서만 호출됨)
+     */
+    private void SetFuseBox(Button fuseBox, bool working)
     {
         
     }
@@ -218,7 +275,7 @@ public class Room : MonoBehaviour
     // ------------------------------------------------------------------------
     // 비주얼
     // ------------------------------------------------------------------------
-    
+    [Header("비주얼")]
     /*
      * Side Room의 경우엔 RoomDataSO의 sprite를 적용시키지만,
      * Center Room은 프리팹 자체에 이미 sprite를 가지며 변경하지 않음.
@@ -247,13 +304,17 @@ public class Room : MonoBehaviour
     public bool MonsterExists => _aliveMonsters.Count > 0;
     public Monster Monster => MonsterExists ? _aliveMonsters[0] : null;
     
+    
     private void InitMonsterSpot()
     {
         if (GetRoomPosition().direction == RoomDirection.LEFT)
         {
-            _monsterPos = transform.position - new Vector3(-1, 0, 0);
+            _monsterPos = transform.position + new Vector3(-1.5f, 0, 0);
         }
-        else _monsterPos = transform.position + new Vector3(1, 0, 0);
+        else if(GetRoomPosition().direction == RoomDirection.RIGHT)
+            _monsterPos = transform.position + new Vector3(1.5f, 0, 0);
+        else
+            _monsterPos = transform.position + new Vector3(1.2f, 0, 0);
     }
     
     public void PlaceMonster(Monster monster)
@@ -263,6 +324,16 @@ public class Room : MonoBehaviour
 
     }
     
+    /*
+     * 적을 죽여서 방 정보로부터 없애는 메서드.
+     */
+    public void RemoveMonster(Monster monster)
+    {
+        if (_aliveMonsters.Contains(monster))
+        {
+            _aliveMonsters.Remove(monster);
+        }
+    }
     
     // ------------------------------------------------------------------------
     // 기타 정보

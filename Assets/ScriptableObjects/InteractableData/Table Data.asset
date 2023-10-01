@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ab2bfafecec71c4292e381c7a8120e8, type: 3}
   m_Name: Table Data
   m_EditorClassIdentifier: 
-  Sprite: {fileID: 21300000, guid: 45f5754af8da4224b87fd53223556ef7, type: 3}
+  Sprite: {fileID: 21300000, guid: 0681f07834f49324697034a270e7490c, type: 3}
   SpriteAfterInteraction: {fileID: 0}
   IsInteractable: 0
   PossibleItems: []

@@ -18,5 +18,5 @@ MonoBehaviour:
   Type: 1
   Stackable: 0
   Recipes: []
-  MinDmg: 1
-  MaxDmg: 2
+  MinDmg: 2
+  MaxDmg: 4

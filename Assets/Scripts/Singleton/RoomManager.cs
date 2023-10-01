@@ -1,7 +1,9 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 public class RoomManager : MonoBehaviour
@@ -29,11 +31,12 @@ public class RoomManager : MonoBehaviour
         
         // 랜덤 적 생성
         SpawnMonsters();
+        
+        
+        CloseElevatorPanel();
+        
     }
 
-    private void Start()
-    {
-    }
 
     // ------------------------------------------------------------------------
     // 방들의 참조 정보
@@ -43,11 +46,15 @@ public class RoomManager : MonoBehaviour
     private Floor p_floor;
     [SerializeField] 
     private Floor p_bottomFloor, p_topFloor;
-
-    
     
     private Dictionary<RoomPosition, Room> _roomsDictionary = new Dictionary<RoomPosition, Room>();
 
+    
+    // 1층부터 99층까지 엘리베이터의 작동 여부
+    private bool[] _areElevatorsWorking;
+    // 5층부터 95층까지 두꺼비집의 작동 여부
+    private bool[] _areFuseBoxesWorking;
+    
     private void CreateBuilding()
     {
         int maxFloor = GameConstantsSO.Instance.MaxFloor;
@@ -161,7 +168,6 @@ public class RoomManager : MonoBehaviour
                 leftRoom.SetRoomData(_sideRoomDataSOs[leftIndex]);
                 rightRoom.InitRoom();
                 rightRoom.SetRoomData(_sideRoomDataSOs[rightIndex]);
-                
             }
         }
     }
@@ -174,6 +180,10 @@ public class RoomManager : MonoBehaviour
             if (center)
             {
                 centerRoom.InitRoom();
+
+                bool elevatorWorking = Random.Range(0, 100) < GameConstantsSO.Instance.ElevatorWorkingChance;
+                
+                centerRoom.SetCenterRoom(i+1,elevatorWorking);
             }
         }
     }
@@ -202,7 +212,7 @@ public class RoomManager : MonoBehaviour
     private void SetMonsterCanvasSize()
     {
         var data = GameConstantsSO.Instance;
-        _monsterCanvas.sizeDelta = new Vector2(data.RoomWidth * 3, data.RoomHeight * data.MaxFloor);
+        _monsterCanvas.sizeDelta = new Vector2(data.FloorWidth, data.RoomHeight * data.MaxFloor);
         _monsterCanvas.position = new Vector3(0, 0, 0);
     }
 
@@ -213,8 +223,9 @@ public class RoomManager : MonoBehaviour
     {
         //TODO : 디버그용, 랜덤 알고리즘
         
-        SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(96,RoomDirection.CENTER)));
-        SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(97,RoomDirection.RIGHT)));
+        //SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(96,RoomDirection.CENTER)));
+        //SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(97,RoomDirection.RIGHT)));
+        //SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(98,RoomDirection.LEFT)));
     }
 
     private void SpawnMonster(Monster monsterPrefab, Room room)
@@ -224,9 +235,69 @@ public class RoomManager : MonoBehaviour
         room.PlaceMonster(monster);
     }
 
+    /*
+     * 층별로 몬스터를 배치하기 위한 메서드
+     */
     private Monster GetMonsterFromFloor(int floor)
     {
         return p_zombie;
+    }
+    
+    
+    // ------------------------------------------------------------------------
+    // 엘리베이터
+    // ------------------------------------------------------------------------
+    [Header("엘리베이터")] [SerializeField]
+    private GameObject _elevatorPanelRoot;
+
+    // 가장 아래 위치한 요소의 인덱스 [0] 부터 시작.
+    [SerializeField]private List<Button> _elevatorPanelButtons;
+    [SerializeField]private List<TextMeshProUGUI> _elevatorPanelButtonTmps;
+    
+    /*
+     * 고장나지 않은 엘리베이터를 클릭했을 때 UI를 표시하는 메서드.
+     */
+    public void OpenElevatorPanel()
+    {
+        _elevatorPanelRoot.SetActive(true);
+        SetPrimaryElevatorPanel();
+    }
+
+    public void CloseElevatorPanel()
+    {
+        _elevatorPanelRoot.SetActive(false);
+    }
+
+
+    /*
+     * 엘리베이터 패널의 버튼들을 관리하는 메서드.
+     * 처음 엘리베이터 패널을 열면 이 메서드가 호출됨.
+     */
+    private void SetPrimaryElevatorPanel()
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            _elevatorPanelButtonTmps[i].text = $"{Mathf.Clamp(10*i,1,99)} - {10*i + 9}";
+            _elevatorPanelButtons[i].onClick.RemoveAllListeners();
+            
+            // 람다식이 i를 캡쳐해서 원하지 않은 값을 파라미터로 이용하지 않게 함
+            int index = i;
+            _elevatorPanelButtons[i].onClick.AddListener(() => SetSecondaryElevatorPanel(index));
+            
+        }
+        _elevatorPanelButtonTmps[10].text = "VIP";
+    }
+
+    /*
+     * 엘리베이터 패널에서 10층 단위의 버튼을 클릭했을 때 실행되는 메서드.
+     * 최소 0 ~ 최대 9를 파라미터로 받는다.
+     */
+    private void SetSecondaryElevatorPanel(int floorTens)
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            _elevatorPanelButtonTmps[i].text = $"{Mathf.Clamp(10*floorTens + i,1,99)}";
+        }
     }
     
     // ------------------------------------------------------------------------
@@ -249,7 +320,6 @@ public class RoomManager : MonoBehaviour
         {
             return DataManager.Instance.Difficulty;
         }
-
         return _customDifficulty;
     }
 }
