@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using DG.Tweening;
 using Spine;
 using Spine.Unity;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -48,6 +49,8 @@ public class Player : MonoBehaviour
         
         // 플레이어 스탯 초기화
         _status.InitStatus();
+        
+        CloseDialogue();
     }
 
     private void InitPlayerPosition()
@@ -93,7 +96,7 @@ public class Player : MonoBehaviour
     // ------------------------------------------------------------------------
     
     [Header("인벤토리")][SerializeField] private PlayerInventory _inventory;
-
+    public PlayerInventory Inventory => _inventory;
     public void ObtainItem(ItemDataSO data, Vector2 pos = new Vector2())
     {
         _inventory.ObtainItem(data);
@@ -359,7 +362,9 @@ public class Player : MonoBehaviour
                 if (_currentRoom != direction.Host &&
                     direction.transform.position.y <= transform.position.y + float.Epsilon)
                 {
-                    //TODO : 플레이어가 '지금은 갈 수 없다'는 메세지 표시
+                    //플레이어가 '지금은 갈 수 없다'는 메세지 표시
+                    SetDialogue("지금은 갈 수 없어...");
+                    
                     _routesQueue.Clear();
                     
                     // 만약 현재 Center Room의 RoomSpot[0] 이 아니라면 그 위치로 이동한다.
@@ -385,20 +390,6 @@ public class Player : MonoBehaviour
         SetAnimationState("Idle");
     }
 
-    /*
-     * 시작 시 혹은 특정 이벤트로 바로 순간이동해 위치를 바꾸는 메서드.
-     */
-    private void MoveRoomInstantly(RoomPosition destination)
-    {
-        var room = _currentRoom;
-        if(room != null)
-            room.Exit();
-        
-        _currentRoom = RoomManager.Instance.GetRoomFromPosition(destination);
-        SyncPlayerPosWithRoom();
-        
-        _currentRoom.Enter();
-    }
 
     /*
      * 목표(바로 다음의) RoomSpot까지 이동하는 메서드.
@@ -503,6 +494,26 @@ public class Player : MonoBehaviour
         transform.position = _currentRoom.spots[0].transform.position;
     }
     
+    /*
+     * 시작 시 혹은 특정 이벤트로 바로 순간이동해 위치를 바꾸는 메서드.
+     */
+    private void MoveRoomInstantly(RoomPosition destination)
+    {
+        var room = _currentRoom;
+        if(room != null)
+            room.Exit();
+        
+        _currentRoom = RoomManager.Instance.GetRoomFromPosition(destination);
+        SyncPlayerPosWithRoom();
+        
+        _currentRoom.Enter();
+    }
+
+    public void MoveRoomByElevator(int destinationFloor)
+    {
+        MoveRoomInstantly(new RoomPosition(destinationFloor,RoomDirection.CENTER));
+        ModifySatiety(-2);
+    }
     
     // ------------------------------------------------------------------------
     // 전투 
@@ -564,6 +575,32 @@ public class Player : MonoBehaviour
         _skeleton.AnimationState.Event += _battleManager.OnSpineEventRaised;
     }
     
+    
+    
+    // ------------------------------------------------------------------------
+    // 대사
+    // ------------------------------------------------------------------------
+    [Header("대사")]
+    [SerializeField] private GameObject _dialogueRoot;
+    [SerializeField] private TextMeshProUGUI _dialogueTmp;
+    [SerializeField] private float _dialogueTime;
+    
+    private float _dialogueTimer;
+
+
+    public void SetDialogue(string text)
+    {
+        _dialogueRoot.gameObject.SetActive(true);
+        _dialogueTimer = _dialogueTime;
+        _dialogueTmp.text = text;
+    }
+
+    private void CloseDialogue()
+    {
+        _dialogueRoot.gameObject.SetActive(false);
+    }
+    
+    
     // ------------------------------------------------------------------------
     // 초기화
     // ------------------------------------------------------------------------
@@ -622,6 +659,11 @@ public class Player : MonoBehaviour
     private void Update()
     {
         _isMovingCoroutine = _moveCoroutine != null;
+        if (_dialogueTimer > 0)
+        {
+            _dialogueTimer -= Time.deltaTime;
+            if(_dialogueTimer <= 0) CloseDialogue();
+        }
     }
 
     private void OnDrawGizmos()

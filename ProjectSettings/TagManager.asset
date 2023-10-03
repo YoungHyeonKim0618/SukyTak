@@ -56,6 +56,9 @@ TagManager:
   - name: Wall
     uniqueID: 4059309179
     locked: 0
+  - name: Dialogue
+    uniqueID: 1844850611
+    locked: 0
   - name: GameUI
     uniqueID: 2048275605
     locked: 0

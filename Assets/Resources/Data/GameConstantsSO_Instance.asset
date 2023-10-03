@@ -17,9 +17,9 @@ MonoBehaviour:
   SideRoomWidth: 6
   RoomHeight: 4
   MaxSatiety: 100
-  ElevatorWorkingChance: 30
-  FuseBoxWorkingChance: 100
-  FuseBoxFixChance: 75
+  ElevatorWorkingChance: 40
+  FuseboxWorkingChance: 0
+  FuseboxFixChance: 0
   DefaultMaxHP: 100
   DefaultCritChance: 50
   DefaultAdditionalAttackChance: 0
@@ -36,3 +36,5 @@ MonoBehaviour:
   _rootableItems:
   - {fileID: 11400000, guid: ad182df58ff056243bec07b49ca53e59, type: 2}
   - {fileID: 11400000, guid: c76d4253f683a2c44a4086ff88e5b172, type: 2}
+  _itemsToFixFusebox:
+  - {fileID: 11400000, guid: ad182df58ff056243bec07b49ca53e59, type: 2}

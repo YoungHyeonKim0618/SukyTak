@@ -29,12 +29,14 @@ public class RoomManager : MonoBehaviour
         FindSideRoomDataSOs();
         InitBuilding();
         
+        InitRoomPowers();
+        
         // 랜덤 적 생성
         SpawnMonsters();
         
-        
+        // UI 이미지 닫기
         CloseElevatorPanel();
-        
+        CloseFuseboxPanel();
     }
 
 
@@ -53,7 +55,9 @@ public class RoomManager : MonoBehaviour
     // 1층부터 99층까지 엘리베이터의 작동 여부
     private bool[] _areElevatorsWorking;
     // 5층부터 95층까지 두꺼비집의 작동 여부
-    private bool[] _areFuseBoxesWorking;
+    private Dictionary<int,bool> _areFuseboxesWorking;
+    // 고장난 두꺼비집을 수리하는데 필요한 아이템 정보
+    private Dictionary<int, ItemDataSO> _itemsNeedToFixFusebox;
     
     private void CreateBuilding()
     {
@@ -174,6 +178,10 @@ public class RoomManager : MonoBehaviour
 
     private void InitCenterRooms()
     {
+        _areElevatorsWorking = new bool[GameConstantsSO.Instance.MaxFloor - 1];
+        _areFuseboxesWorking = new Dictionary<int, bool>();
+        _itemsNeedToFixFusebox = new Dictionary<int, ItemDataSO>();
+        
         for (int i = 1; i < GameConstantsSO.Instance.MaxFloor - 1; i++)
         {
             bool center = _roomsDictionary.TryGetValue(new RoomPosition(i, RoomDirection.CENTER), out Room centerRoom);
@@ -181,9 +189,23 @@ public class RoomManager : MonoBehaviour
             {
                 centerRoom.InitRoom();
 
+                // 엘리베이터 작동 설정
                 bool elevatorWorking = Random.Range(0, 100) < GameConstantsSO.Instance.ElevatorWorkingChance;
-                
+                _areElevatorsWorking[i] = elevatorWorking;
                 centerRoom.SetCenterRoom(i+1,elevatorWorking);
+                
+                // 5층 단위마다 두꺼비집 작동 설정
+                if ((i + 1) % 5 == 0)
+                {
+                    bool fuseBoxWorking = Random.Range(0, 100) < GameConstantsSO.Instance.FuseboxWorkingChance;
+                    _areFuseboxesWorking.Add(i,fuseBoxWorking);
+                    // 고장난 두꺼비집을 고치기 위한 아이템 설정
+                    if(!fuseBoxWorking)
+                        _itemsNeedToFixFusebox.Add(i, GameConstantsSO.Instance.GetRandomItemToFixFusebox());
+                    
+                    centerRoom.SetFusebox(fuseBoxWorking);
+                }
+                else centerRoom.DisableFusebox();
             }
         }
     }
@@ -196,6 +218,42 @@ public class RoomManager : MonoBehaviour
     private void InitBottomRoom()
     {
         _roomsDictionary[new RoomPosition(0,RoomDirection.CENTER)].InitRoom();
+    }
+
+    /*
+     * 기본적으로 활성화되어있는 Blackout Image들을 조건에 맞는 방들만 비활성화하는 메서드.
+     *
+     * - 꼭대기층부터 96층까지는 무조건 비활성화한다.
+     * - 이후는 5층 단위로 두꺼비집이 멀쩡하다면 모두 비활성화한다.
+     */
+    private void InitRoomPowers()
+    {
+        for (int i = 99; i > 0; i -= 5)
+        {
+            if (i == 99 || _areFuseboxesWorking[i])
+            {
+                for (int j = i == 99 ? 1 : 0; j < 5; j++)
+                {
+                    _roomsDictionary[new RoomPosition(i - j,RoomDirection.LEFT)].TurnLightOn();
+                    _roomsDictionary[new RoomPosition(i - j,RoomDirection.CENTER)].TurnLightOn();
+                    _roomsDictionary[new RoomPosition(i - j,RoomDirection.RIGHT)].TurnLightOn();
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    private void TurnLightsOn(int floor)
+    {
+        for (int j = 0; j < 5; j++)
+        {
+            _roomsDictionary[new RoomPosition(floor - j,RoomDirection.LEFT)].TurnLightOn();
+            _roomsDictionary[new RoomPosition(floor - j,RoomDirection.CENTER)].TurnLightOn();
+            _roomsDictionary[new RoomPosition(floor - j,RoomDirection.RIGHT)].TurnLightOn();
+        }
     }
     
     // ------------------------------------------------------------------------
@@ -251,16 +309,27 @@ public class RoomManager : MonoBehaviour
     private GameObject _elevatorPanelRoot;
 
     // 가장 아래 위치한 요소의 인덱스 [0] 부터 시작.
-    [SerializeField]private List<Button> _elevatorPanelButtons;
-    [SerializeField]private List<TextMeshProUGUI> _elevatorPanelButtonTmps;
+    [SerializeField] private List<Button> _elevatorPanelButtons;
+    [SerializeField] private List<TextMeshProUGUI> _elevatorPanelButtonTmps;
+
+    [SerializeField] private Color _yellowColor, _greenColor, _redColor;
     
     /*
      * 고장나지 않은 엘리베이터를 클릭했을 때 UI를 표시하는 메서드.
+     * 현재 층 이상의 층에 전력이 들어오지 않았다면 사용할 수 없다.
      */
-    public void OpenElevatorPanel()
+    public void OpenElevatorPanel(int floor)
     {
-        _elevatorPanelRoot.SetActive(true);
-        SetPrimaryElevatorPanel();
+        if (IsElevatorAvailable(floor))
+        {
+            _elevatorPanelRoot.SetActive(true);
+            SetPrimaryElevatorPanel();
+        }
+        else
+        {
+            // 플레이어 대사 출력
+            Player.Instance.SetDialogue("여기나 더 위의 전력이 나갔어...");
+        }
     }
 
     public void CloseElevatorPanel()
@@ -280,12 +349,34 @@ public class RoomManager : MonoBehaviour
             _elevatorPanelButtonTmps[i].text = $"{Mathf.Clamp(10*i,1,99)} - {10*i + 9}";
             _elevatorPanelButtons[i].onClick.RemoveAllListeners();
             
-            // 람다식이 i를 캡쳐해서 원하지 않은 값을 파라미터로 이용하지 않게 함
-            int index = i;
-            _elevatorPanelButtons[i].onClick.AddListener(() => SetSecondaryElevatorPanel(index));
+            /*
+             * 10층 단위로 엘리베이터가 갈 수 있는지 여부는 다음과 같다.
+             * 1. Player가 10*(n+1)층 이하로 내려가 봤고
+             * 2. 10*n층을 포함한 위의 모든 두꺼비집이 고장나지 않아야 함
+             */
+            bool available = Player.Instance.LowestFloorVisited < 10 * (i+1) && IsElevatorAvailable(10 * (i+1) - 1);
+            
+            if(available)
+            {
+                // 람다식이 i를 캡쳐해서 원하지 않은 값을 파라미터로 이용하지 않게 함
+                int index = i;
+                _elevatorPanelButtons[i].image.color = _greenColor;
+                _elevatorPanelButtonTmps[i].color = Color.black;
+                _elevatorPanelButtons[i].onClick.AddListener(() => SetSecondaryElevatorPanel(index));
+            }
+            else
+            {
+                _elevatorPanelButtons[i].image.color = _redColor;
+                _elevatorPanelButtonTmps[i].color = Color.white;
+            }
             
         }
+        _elevatorPanelButtons[10].image.color = _yellowColor;
         _elevatorPanelButtonTmps[10].text = "VIP";
+        _elevatorPanelButtonTmps[10].color = Color.black;
+        
+        _elevatorPanelButtons[10].onClick.RemoveAllListeners();
+        _elevatorPanelButtons[10].onClick.AddListener(() => MoveRoomByElevator(GameConstantsSO.Instance.MaxFloor-1));
     }
 
     /*
@@ -297,7 +388,148 @@ public class RoomManager : MonoBehaviour
         for (int i = 0; i < 10; i++)
         {
             _elevatorPanelButtonTmps[i].text = $"{Mathf.Clamp(10*floorTens + i,1,99)}";
+            _elevatorPanelButtons[i].onClick.RemoveAllListeners();
+
+            int curFloor = 10 * floorTens + i - 1;
+
+            if (_areElevatorsWorking[curFloor] && IsElevatorAvailable(curFloor))
+            {
+                _elevatorPanelButtons[i].image.color = _greenColor;
+                _elevatorPanelButtonTmps[i].color = Color.black;
+
+                // 다른 층으로 이동
+                if(curFloor != Player.Instance.CurrentRoom.GetRoomPosition().floor)
+                    _elevatorPanelButtons[i].onClick.AddListener(() => MoveRoomByElevator(curFloor));
+            }
+            else
+            {
+                _elevatorPanelButtons[i].image.color = _redColor;
+                _elevatorPanelButtonTmps[i].color = Color.white;
+            }
         }
+        _elevatorPanelButtons[10].image.color = Color.clear;
+        _elevatorPanelButtonTmps[10].text = "돌아가기";
+        _elevatorPanelButtonTmps[10].color = _greenColor;
+        
+        _elevatorPanelButtons[10].onClick.RemoveAllListeners();
+        _elevatorPanelButtons[10].onClick.AddListener(SetPrimaryElevatorPanel);
+    }
+
+    private void MoveRoomByElevator(int floor)
+    {
+        CloseElevatorPanel();
+        Player.Instance.MoveRoomByElevator(floor);
+    }
+
+    /*
+     * 해당 층 이상에 고장난 두꺼비집이 하나라도 있다면 false
+     */
+    private bool IsElevatorAvailable(int floor)
+    {
+        if (floor >= GameConstantsSO.Instance.MaxFloor - 5) return true;
+        
+        foreach (var pair in _areFuseboxesWorking)
+        {
+            if (pair.Key >= floor && pair.Value == false) return false;
+        }
+        return true;
+    }
+        
+        
+    // ------------------------------------------------------------------------
+    // 두꺼비집
+    // ------------------------------------------------------------------------
+
+    [Header("두꺼비집")] [SerializeField]
+    private GameObject _fuseBoxPanelRoot;
+
+    [SerializeField] private Image _itemToFixFuseboxImage;
+    [SerializeField] private TextMeshProUGUI _itemToFixFuseboxTmp;
+    [SerializeField] private TextMeshProUGUI _tryFixTmp;
+    [SerializeField] private Button _fuseboxYesButton, _fuseboxNoButton;
+
+    public void OpenFuseboxPanel(int floor)
+    {
+        // 현재 층보다 높은 위치의 두꺼비집이 고쳐지지 않았다면 고칠 수 없음
+        if (!IsElevatorAvailable(floor + 1)) return;
+        
+        
+        _fuseBoxPanelRoot.SetActive(true);
+
+        if (_itemsNeedToFixFusebox.TryGetValue(floor, out ItemDataSO data))
+        {
+            _itemToFixFuseboxImage.sprite = data.Sprite;
+            _itemToFixFuseboxTmp.text = data.Name;
+            
+            // 필요한 아이템을 가지고 있을 때
+            if (Player.Instance.Inventory.IsExists(data))
+            {
+                _tryFixTmp.text = "";
+                _fuseboxYesButton.onClick.RemoveAllListeners();
+                _fuseboxNoButton.onClick.RemoveAllListeners();
+                _fuseboxYesButton.onClick.AddListener(() => FixFusebox(floor));
+                _fuseboxNoButton.onClick.AddListener(CloseFuseboxPanel);
+            }
+            else
+            {
+                _tryFixTmp.text = "혹은 아무거나 이용해서 수리를 시도해봐야 할까?";
+                _fuseboxYesButton.onClick.RemoveAllListeners();
+                _fuseboxNoButton.onClick.RemoveAllListeners();
+                _fuseboxYesButton.onClick.AddListener(() => TryFixFusebox(floor));
+                _fuseboxNoButton.onClick.AddListener(CloseFuseboxPanel);
+            }
+        }
+        else
+        {
+            Debug.LogError("Cannot find item to fix the fusebox! floor : " + floor);
+        }
+    }
+
+
+    public void CloseFuseboxPanel()
+    {
+        _fuseBoxPanelRoot.SetActive(false);
+    }
+
+    /*
+     * 필요한 아이템을 가지고 있을 때 확정적으로 고치는 메서드
+     */
+    private void FixFusebox(int floor)
+    {
+        print(floor);
+        CloseFuseboxPanel();
+        
+        // 필요 아이템 소실
+        Player.Instance.Inventory.RemoveItem(_itemsNeedToFixFusebox[floor]);
+        
+        // 고치기
+        SucceedFixingFusebox(floor);
+    }
+
+    /*
+     * 필요한 아이템이 없어 포만도와 랜덤 아이템을 소모해 시도하는 메서드
+     */
+    private void TryFixFusebox(int floor)
+    {
+        CloseFuseboxPanel();
+        // 배고픔 5~ 14 소모
+        int cost = Random.Range(5, 14);
+        Player.Instance.ModifySatiety(-cost);
+
+        // 랜덤 재료 아이템 (없다면 무기 아이템) 소실
+
+        bool success = Random.Range(0, 100) < GameConstantsSO.Instance.FuseboxFixChance;
+        if(success) SucceedFixingFusebox(floor);
+        
+        // 플레이어 대사
+        Player.Instance.SetDialogue(success ? "해냈어! 나의 노력이 결실을 맺었어." : "시간만 날렸군!");
+    }
+
+    private void SucceedFixingFusebox(int floor)
+    {
+        _areFuseboxesWorking[floor] = true;
+        TurnLightsOn(floor);
+        _roomsDictionary[new RoomPosition(floor,RoomDirection.CENTER)].SetFusebox(true);
     }
     
     // ------------------------------------------------------------------------

@@ -35,8 +35,8 @@ public class GameConstantsSO : ScriptableObject
 
     [Header("가운데 방 설정")]
     public float ElevatorWorkingChance;
-    public float FuseBoxWorkingChance;
-    public float FuseBoxFixChance;
+    public float FuseboxWorkingChance;
+    public float FuseboxFixChance;
 
     [Header("플레이어 기본 스탯")] 
     public float DefaultMaxHP;
@@ -78,10 +78,19 @@ public class GameConstantsSO : ScriptableObject
     [Header("글로벌 에셋")]
     public Sprite InteractaleActivatedSprite;
     
+    [Header("아이템 참조")]
     [SerializeField] private List<ItemDataSO> _rootableItems;
     public ItemDataSO GetRandomRootableItem()
     {
         int index = Random.Range(0, _rootableItems.Count);
         return _rootableItems[index];
+    }
+
+    [SerializeField] private List<ItemDataSO> _itemsToFixFusebox;
+
+    public ItemDataSO GetRandomItemToFixFusebox()
+    {
+        int index = Random.Range(0, _itemsToFixFusebox.Count);
+        return _itemsToFixFusebox[index];
     }
 }

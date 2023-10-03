@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -12,9 +13,10 @@ public class PlayerInventory : MonoBehaviour
     
     // 모든 아이템 리스트
     private List<Item> _items = new List<Item>();
+    
+    
     // 아이템으로 UI를 찾을 수 있는 딕셔너리
     private Dictionary<Item, ItemUI> _itemUiDictionary = new Dictionary<Item, ItemUI>();
-    
     
     
     public void ObtainItem(ItemDataSO itemData)
@@ -90,6 +92,30 @@ public class PlayerInventory : MonoBehaviour
     
     
     // ------------------------------------------------------------------------
+    // 획득/ 삭제
+    // ------------------------------------------------------------------------
+
+    public bool IsExists(ItemDataSO data)
+    {
+        return _items.Any(x => x.Data == data);
+    }
+
+    public void RemoveItem(ItemDataSO data)
+    {
+        // data를 가지는 item 하나 삭제
+        if (IsExists(data))
+        {
+            //TODO : 삭제
+        }
+        else
+        {
+            Debug.LogError("Trying to remove item which is not obtained!");
+        }
+    }
+    
+    
+    
+    // ------------------------------------------------------------------------
     // 무기
     // ------------------------------------------------------------------------
     [Header("무기")] 
@@ -123,6 +149,9 @@ public class PlayerInventory : MonoBehaviour
             
         }
     }
+    
+    
+    
 
     // ------------------------------------------------------------------------
     // 디스플레이

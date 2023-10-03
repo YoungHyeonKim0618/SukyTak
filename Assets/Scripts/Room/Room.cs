@@ -182,8 +182,7 @@ public class Room : MonoBehaviour
     // ------------------------------------------------------------------------
     // Initiation (Side Rooms)
     // ------------------------------------------------------------------------
-    [Header("초기화")] [SerializeField]
-    private Image p_interactableActivated;
+    [Header("초기화")]
 
     private List<Interactable> _interactables = new List<Interactable>();
     
@@ -240,6 +239,9 @@ public class Room : MonoBehaviour
     [Header("가운데 방 초기화 (Side Room은 참조할 필요 없음)")]
     [SerializeField] private Button _elevator;
     [SerializeField] private Sprite _elevatorWorkingSprite, _elevatorBrokenSprite;
+
+    [SerializeField] private Button _fusebox;
+    [SerializeField] private Sprite _fuseboxWorkingSprite, _fuseboxBrokenSprite;
     [SerializeField] private TextMeshProUGUI _floorTmp;
 
     public void SetCenterRoom(int floor, bool elevator)
@@ -261,15 +263,24 @@ public class Room : MonoBehaviour
         _elevator.image.sprite = working ? _elevatorWorkingSprite : _elevatorBrokenSprite;
         // 엘리베이터 클릭 시 이벤트에 패널을 여는 메서드를 등록
         if(working)
-            _elevator.onClick.AddListener(RoomManager.Instance.OpenElevatorPanel);
+            _elevator.onClick.AddListener(() => RoomManager.Instance.OpenElevatorPanel(_floorNumber));
     }
 
     /*
      * 두꺼비집이 멀쩡한지 여부 설정 (5층 단위 층에서만 호출됨)
      */
-    private void SetFuseBox(Button fuseBox, bool working)
+    public void SetFusebox(bool working)
     {
+        _fusebox.interactable = !working;
+        _fusebox.image.sprite = working ? _fuseboxWorkingSprite : _fuseboxBrokenSprite;
         
+        if(!working)
+            _fusebox.onClick.AddListener(() => RoomManager.Instance.OpenFuseboxPanel(GetRoomPosition().floor));
+    }
+
+    public void DisableFusebox()
+    {
+        _fusebox.gameObject.SetActive(false);
     }
     
     // ------------------------------------------------------------------------
@@ -288,9 +299,17 @@ public class Room : MonoBehaviour
      */
     [SerializeField] private Image _darkImage;
     
+    // 전원이 꺼진 방을 어둡게 보이게 하는 이미지.
+    [SerializeField] private Image _blackOutImage;
+    
     private void SetDarkImageAlpha(float value)
     {
         _darkImage.color = new Color(0, 0, 0, value);
+    }
+
+    public void TurnLightOn()
+    {
+        _blackOutImage.gameObject.SetActive(false);
     }
     
     // ------------------------------------------------------------------------
