@@ -6,17 +6,38 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class PlayerInventory : MonoBehaviour
 {
-    
-    
     // 모든 아이템 리스트
     private List<Item> _items = new List<Item>();
-    
+
+    /*
+     * 아이템 타입별로 따로 저장하는 딕셔너리.
+     * Obtain/ Remove시에 같이 저장하고 삭제한다.
+     * 여러 타입을 가지는 아이템은 모두 같이 저장/삭제함.
+     */
+    private Dictionary<ItemType, List<Item>> _itemDictionary = new Dictionary<ItemType, List<Item>>();
     
     // 아이템으로 UI를 찾을 수 있는 딕셔너리
     private Dictionary<Item, ItemUI> _itemUiDictionary = new Dictionary<Item, ItemUI>();
+
+    private void InitItemDictionary()
+    {
+        foreach (ItemType type in Enum.GetValues(typeof(ItemType)))
+        {
+            _itemDictionary.Add(type,new List<Item>());
+        }
+    }
+    
+    private void Start()
+    {
+        CloseInventoryUi();
+        InitWeapons();
+        InitItemDictionary();
+        SortItemRecipes();
+    }
     
     
     public void ObtainItem(ItemDataSO itemData)
@@ -36,6 +57,14 @@ public class PlayerInventory : MonoBehaviour
 
             // 리스트에 추가
             _items.Add(item);
+            
+            // 딕셔너리에도 추가
+            foreach (ItemType type in Enum.GetValues(typeof(ItemType)))
+            {
+                if(itemData.Type.HasFlag(type))
+                    _itemDictionary[type].Add(item);
+            }
+            
 
             // 새로운 ItemUI를 만들고 알맞은 Grid에 추가
             var newItemUi = Instantiate(p_itemUi,_inventoryRoot);
@@ -81,6 +110,12 @@ public class PlayerInventory : MonoBehaviour
         {
             // List에서 Item 삭제
             _items.Remove(item);
+            // Dictionary에서도 삭제
+            foreach (ItemType type in Enum.GetValues(typeof(ItemType)))
+            {
+                if(item.Data.Type.HasFlag(type))
+                    _itemDictionary[type].Remove(item);
+            }
             
             // ItemUI 삭제
             ItemUI itemUi = _itemUiDictionary[item];
@@ -88,32 +123,79 @@ public class PlayerInventory : MonoBehaviour
             Destroy(itemUi.gameObject);
         }
         
+        //TODO : 장착되어있는 무기나 장신구였다면 해제해줌
+    }
+
+    public void DropItem(ItemDataSO itemData)
+    {
+        foreach (var item in _items)
+        {
+            if (item.Data == itemData)
+            {
+                DropItem(item);
+                break;
+            }
+        }
     }
     
-    
-    // ------------------------------------------------------------------------
-    // 획득/ 삭제
-    // ------------------------------------------------------------------------
-
     public bool IsExists(ItemDataSO data)
     {
         return _items.Any(x => x.Data == data);
     }
 
-    public void RemoveItem(ItemDataSO data)
+    /*
+     * 임의의 아이템을 버리는 메서드. other == true라면 기타 아이템 중 하나, 없다면 무기 아이템 중 하나를 버림.
+     */
+    public void DropRandomItem(bool other)
     {
-        // data를 가지는 item 하나 삭제
-        if (IsExists(data))
+        if (_items.Count == 0)
         {
-            //TODO : 삭제
+            print("No item to drop!");
+            return;
+        }
+            
+            
+        if (other)
+        {
+            if (_itemDictionary[ItemType.OTHER].Count > 0)
+            {
+                int index = Random.Range(0, _itemDictionary[ItemType.OTHER].Count);
+                DropItem(_itemDictionary[ItemType.OTHER][index]);
+            }
+            else if (_itemDictionary[ItemType.WEAPON].Count > 0)
+            {
+                int index = Random.Range(0, _itemDictionary[ItemType.WEAPON].Count);
+                DropItem(_itemDictionary[ItemType.WEAPON][index]);
+            }
+            // else?
         }
         else
         {
-            Debug.LogError("Trying to remove item which is not obtained!");
+            int index = Random.Range(0, _items.Count);
+            DropItem(_items[index]);
         }
     }
+
     
-    
+    /*
+     * ItemDataSO를 data로 하는 아이템의 수량을 반환하는 메서드
+     */
+    public int GetItemNumber(ItemDataSO data)
+    {
+        if (_items.Any(x => x.Data == data))
+        {
+            if (data.Stackable)
+            {
+                return _items.Find(x => x.Data == data).Stack;
+            }
+            else
+            {
+                return _items.FindAll(x => x.Data == data).Count;
+            }
+        }
+        else return 0;
+    }
+
     
     // ------------------------------------------------------------------------
     // 무기
@@ -162,9 +244,8 @@ public class PlayerInventory : MonoBehaviour
 
     [SerializeField] private float _displayOffsetY;
 
-    public void DisplayItem(Item item, Vector2 pos)
+    public void DisplayItem(ItemDataSO data, Vector2 pos)
     {
-        ItemDataSO data = item.Data;
         _nameTmp.text = data.Name;
         _descriptionTmp.text = data.GetString();
         _displayImage.gameObject.SetActive(true);
@@ -189,20 +270,17 @@ public class PlayerInventory : MonoBehaviour
     [Space(10)] [SerializeField] private GraphicRaycaster _raycaster;
 
 
-    private void Start()
-    {
-        CloseInventoryUi();
-        InitWeapons();
-    }
 
     public void OpenInventoryUi()
     {
         _inventoryRoot.gameObject.SetActive(true);
+        SelectRecipeType((int)ItemType.WEAPON);
         ForceUpdateGridLayouts();
     }
 
     public void CloseInventoryUi()
     {
+        ResetSelectedRecipe();
         _inventoryRoot.gameObject.SetActive(false);
     }
     
@@ -260,12 +338,187 @@ public class PlayerInventory : MonoBehaviour
     // ------------------------------------------------------------------------
     // 조합, 조합법
     // ------------------------------------------------------------------------
-    private void FindRecipes()
+    [Header("조합")] [SerializeField] private List<ItemRecipeSO> _weaponRecipes;
+    [SerializeField] 
+    private List<ItemRecipeSO> _accessoryRecipes, _foodRecipes, _medicalRecipes, _otherRecipes;
+    
+    //TODO : 일반 버튼이 아닌 관리 가능한 클래스로 변경
+    [SerializeField] private List<RecipeButton> _recipeButtons;
+    /*
+     * ItemRecipe들을 필요한 가구의 레벨 오름차순으로 정렬하는 메서드
+     */
+    private void SortItemRecipes()
     {
-        
+        _weaponRecipes.Sort((a,b) => a.NecessaryFurnitureLevel.CompareTo(b.NecessaryFurnitureLevel));
+        _accessoryRecipes.Sort((a, b) => a.NecessaryFurnitureLevel.CompareTo(b.NecessaryFurnitureLevel));
+        _foodRecipes.Sort((a, b) => a.NecessaryFurnitureLevel.CompareTo(b.NecessaryFurnitureLevel));
+        _medicalRecipes.Sort((a, b) => a.NecessaryFurnitureLevel.CompareTo(b.NecessaryFurnitureLevel));
+        _otherRecipes.Sort((a, b) => a.NecessaryFurnitureLevel.CompareTo(b.NecessaryFurnitureLevel));
     }
-    private void Craft()
+
+    /*
+     * 조합법 왼쪽의 버튼을 누를 때 호출되는 메서드.
+     */
+    public void SelectRecipeType(int type)
     {
-        
+        ResetSelectedRecipe();
+        int recipeNum = 0;
+        List<ItemRecipeSO> recipes = null;
+        switch ((ItemType)type)
+        {
+            case ItemType.WEAPON:
+                recipeNum = _weaponRecipes.Count;
+                recipes = _weaponRecipes;
+                break;
+            case ItemType.ACCESSORY:
+                recipeNum = _accessoryRecipes.Count;
+                recipes = _accessoryRecipes;
+                break;
+            case ItemType.FOOD:
+                recipeNum = _foodRecipes.Count;
+                recipes = _foodRecipes;
+                break;
+            case ItemType.MEDICAL:
+                recipeNum = _medicalRecipes.Count;
+                recipes = _medicalRecipes;
+                break;
+            case ItemType.OTHER:
+                recipeNum = _otherRecipes.Count;
+                recipes = _otherRecipes;
+                break;
+        }
+
+        for (int i = 0; i < _recipeButtons.Count; i++)
+        {
+            if (i < recipeNum)
+            {
+                _recipeButtons[i].gameObject.SetActive(true);
+                _recipeButtons[i].GetButton.image.sprite = recipes[i].Output.Sprite;
+                _recipeButtons[i].GetButton.onClick.RemoveAllListeners();
+                _recipeButtons[i].SetItemData(recipes[i]);
+                
+                //TODO : 가구 레벨이 기준치 미만일 때 잠금 Sprite 설정 && onClick에 추가하지 않음
+                
+                int index = i;
+                _recipeButtons[i].GetButton.onClick.AddListener(() => SelectRecipe(recipes[index]));
+                
+            }
+            else
+            {
+                _recipeButtons[i].gameObject.SetActive(false);
+            }
+        }
     }
+
+    /*
+     * 재료 아이템들을 모두 소지하고 있을 때 조합하는 메서드.
+     */
+    public void Combine(ItemRecipeSO recipe)
+    {
+        foreach (var itemData in recipe.Inputs)
+        {
+            if(IsExists(itemData))
+                DropItem(itemData);
+            else Debug.LogError($"There is no input item : {itemData.name}");
+        }
+        ObtainItem(recipe.Output);
+        ResetSelectedRecipe();
+    }
+    
+    // ------------------------------------------------------------------------
+    // 조합 UI
+    // ------------------------------------------------------------------------
+    [Header("조합 UI")][SerializeField] private GameObject _recipeGrid;
+
+    // 최대 4개의 재료 Sprite 이미지와, 재료가 없을 때만 활성화되는 백그라운드 붉은 이미지
+    [SerializeField] private List<Image> _materialDisplays, _materialDisplayBackgrounds;
+
+    private ItemRecipeSO _selectingRecipe;
+
+    [SerializeField] private Sprite _lockedRecipeSprite;
+    
+    /*
+     * 조합법 버튼을 클릭했을 때 호출되는 메서드.
+     */
+    private void SelectRecipe(ItemRecipeSO recipe)
+    {
+        if (recipe.Inputs.Count > 4)
+        {
+            throw new Exception("Inputs of recipes should not over 4!");
+        }
+
+        _selectingRecipe = recipe;
+        
+        
+        Dictionary<ItemDataSO, int> numberDictionary = new Dictionary<ItemDataSO, int>();
+
+        for (int i = 0; i < 4; i++)
+        {
+            if (i < recipe.Inputs.Count)
+            {
+                bool newData = numberDictionary.TryAdd(recipe.Inputs[i], 1);
+                if (!newData) numberDictionary[recipe.Inputs[i]]++;
+                
+                _materialDisplays[i].gameObject.SetActive(true);
+                _materialDisplays[i].sprite = recipe.Inputs[i].Sprite;
+                
+                //부족한 아이템은 붉은 배경으로 표시하기
+                _materialDisplayBackgrounds[i].gameObject.SetActive(GetItemNumber(recipe.Inputs[i]) < numberDictionary[recipe.Inputs[i]]);
+            }
+            else
+            {
+                _materialDisplays[i].gameObject.SetActive(false);
+            }
+        }
+    }
+    
+    /*
+     * 인벤토리 창을 닫을 때 선택된 조합법을 초기화하는 메서드.
+     */
+    private void ResetSelectedRecipe()
+    {
+        _selectingRecipe = null;
+
+        for (int i = 0; i < 4; i++)
+        {
+            _materialDisplays[i].gameObject.SetActive(false);
+            _materialDisplayBackgrounds[i].gameObject.SetActive(false);
+        }
+    }
+
+    /*
+     * 현재 _selectingRecipe의 재료가 모두 있는지 여부를 반환하는 메서드.
+     */
+    private bool IsCombinable()
+    {
+        // 선택중인 조합법이 없다면 false
+        if (_selectingRecipe == null) return false;
+        Dictionary<ItemDataSO, int> numberDictionary = new Dictionary<ItemDataSO, int>();
+        
+        // <ItemDataSO,int> 딕셔너리를 만들어 재료의 종류와 수량을 정리함
+        foreach (var data in _selectingRecipe.Inputs)
+        {
+            bool newData = numberDictionary.TryAdd(data, 1);
+            if (!newData) numberDictionary[data]++;
+        }
+        
+        // 딕셔너리를 이용해 비교
+        foreach (var pair in numberDictionary)
+        {
+            if (GetItemNumber(pair.Key) < pair.Value) return false;
+        }
+        return true;
+    }
+    
+    /*
+     * '제작' 버튼을 클릭했을 때 호출되는 메서드
+     */
+    public void TryCombine()
+    {
+        if (_selectingRecipe != null && IsCombinable())
+        {
+            Combine(_selectingRecipe);
+        }
+    }
+
 }

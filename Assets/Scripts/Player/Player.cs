@@ -109,9 +109,9 @@ public class Player : MonoBehaviour
         DisplayDropItem(item);
     }
 
-    public void DisplayItem(Item item, Vector2 pos)
+    public void DisplayItem(ItemDataSO data, Vector2 pos)
     {
-        _inventory.DisplayItem(item,pos);
+        _inventory.DisplayItem(data,pos);
     }
 
     public void CloseDisplay()

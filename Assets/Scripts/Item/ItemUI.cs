@@ -57,7 +57,7 @@ public class ItemUI : MonoBehaviour,IPointerClickHandler, IBeginDragHandler,IDra
     // ------------------------------------------------------------------------
     public void OnPointerEnter(PointerEventData eventData)
     {
-        Player.Instance.DisplayItem(_item, transform.position);
+        Player.Instance.DisplayItem(_item.Data, transform.position);
     }
 
     public void OnPointerExit(PointerEventData eventData)

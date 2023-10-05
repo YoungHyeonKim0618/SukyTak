@@ -28,7 +28,7 @@ public class Item
         {
             case ItemType.WEAPON:
             case ItemType.ACCESSORY:
-            case ItemType.MATERIAL:
+            case ItemType.OTHER:
                 break;
             case ItemType.FOOD:
                 break;
@@ -47,7 +47,7 @@ public class Item
             
             // 상한 음식은 50% 확률로 피해 입음
             if(foodData.IsRotten && Random.Range(0,100) < 50)
-                Player.Instance.ModifyHp(GameConstantsSO.Instance.RottenFoodDmg);
+                Player.Instance.ModifyHp(-GameConstantsSO.Instance.RottenFoodDmg);
             used = true;
         }
         if (_data.Type == ItemType.MEDICAL && _data is MedicalData medicalData)
@@ -70,5 +70,5 @@ public enum ItemType
     ACCESSORY = 1 << 1,
     FOOD = 1 << 2,
     MEDICAL = 1 << 3,
-    MATERIAL = 1 << 4
+    OTHER = 1 << 4
 }

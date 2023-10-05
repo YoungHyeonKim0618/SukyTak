@@ -500,7 +500,7 @@ public class RoomManager : MonoBehaviour
         CloseFuseboxPanel();
         
         // 필요 아이템 소실
-        Player.Instance.Inventory.RemoveItem(_itemsNeedToFixFusebox[floor]);
+        Player.Instance.Inventory.DropItem(_itemsNeedToFixFusebox[floor]);
         
         // 고치기
         SucceedFixingFusebox(floor);
