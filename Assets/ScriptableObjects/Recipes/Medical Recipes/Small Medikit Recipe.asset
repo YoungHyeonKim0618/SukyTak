@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da9ac3df249ce5740982ca6478b3b612, type: 3}
+  m_Name: Small Medikit Recipe
+  m_EditorClassIdentifier: 
+  Output: {fileID: 11400000, guid: c8bceecb0f1dc284cb4664151c3cdfa2, type: 2}
+  HandCombinable: 1
+  NecessaryFurnitureLevel: 0
+  Inputs:
+  - {fileID: 11400000, guid: beef8a47813470e46bf2681f9612042c, type: 2}
+  - {fileID: 11400000, guid: fda3f3a8082f034409f8c82de5bf2634, type: 2}

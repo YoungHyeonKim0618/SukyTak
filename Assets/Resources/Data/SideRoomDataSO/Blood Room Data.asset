@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72487025e7a86b148b88cfcb902a2af3, type: 3}
+  m_Name: Blood Room Data
+  m_EditorClassIdentifier: 
+  ID: BLOOD_EMPTY
+  Background: {fileID: 21300000, guid: ab2a0427a5d968c46b7c22e3e8309c58, type: 3}
+  VisualObjects:
+  - interactableSo: {fileID: 11400000, guid: 961e4b316edcdf549b6ee69bcf469f3a, type: 2}
+    position: {x: -1.63, y: 0}
+    scale: {x: 1.25, y: 1.25}
+  EnterDialogue: "\uC5C4\uB9C8\uAE5C!"

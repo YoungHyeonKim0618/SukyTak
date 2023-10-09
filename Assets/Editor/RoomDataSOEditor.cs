@@ -22,6 +22,8 @@ public class RoomDataSOEditor : Editor
     private SerializedProperty _idProperty;
     private SerializedProperty _spriteProperty;
     private SerializedProperty _visualObjectsProperty;
+    private SerializedProperty _enterDialogueProperty;
+    
     private void OnEnable()
     {
         _data = target as RoomDataSO;
@@ -29,6 +31,7 @@ public class RoomDataSOEditor : Editor
         _idProperty = serializedObject.FindProperty("ID");
         _spriteProperty = serializedObject.FindProperty("Background");
         _visualObjectsProperty = serializedObject.FindProperty("VisualObjects");
+        _enterDialogueProperty = serializedObject.FindProperty("EnterDialogue");
     }
 
     public override void OnInspectorGUI()
@@ -38,6 +41,7 @@ public class RoomDataSOEditor : Editor
         // Draw 순서를 원하는 대로 설정한다.
         EditorGUILayout.PropertyField(_idProperty);
         EditorGUILayout.PropertyField(_spriteProperty);
+        EditorGUILayout.PropertyField(_enterDialogueProperty);
         
         DrawVisualObjects();
 

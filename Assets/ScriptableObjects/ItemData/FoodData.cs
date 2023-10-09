@@ -10,7 +10,7 @@ public class FoodData : ItemDataSO
 
     public override string GetString()
     {
-        string ret =  $"배고픔 + {Satiety}";
+        string ret =  $"포만감 + {Satiety}";
         if (IsRotten) ret += $"\n<color=red>50% 확률로 {GameConstantsSO.Instance.RottenFoodDmg} 피해 입음</color>";
 
         return ret;

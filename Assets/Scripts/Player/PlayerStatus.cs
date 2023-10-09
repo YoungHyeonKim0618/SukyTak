@@ -28,7 +28,7 @@ public class PlayerStatus : MonoBehaviour
         set
         {
             DisplayHpModification(value - _curHp);
-            _curHp = value;
+            _curHp = Mathf.Min(value, MaxHp);
             if(_curHp <= 0 )Player.Instance.Die();
             SyncHpAndSatietyWithUi();
         }
@@ -50,7 +50,7 @@ public class PlayerStatus : MonoBehaviour
             else
             {
                 DisplaySatietyModification(value - _curSatiety);    
-                _curSatiety = value;
+                _curSatiety = Mathf.Min(value,GameConstantsSO.Instance.MaxSatiety);
             }
             SyncHpAndSatietyWithUi();  
         }
@@ -119,7 +119,12 @@ public class PlayerStatus : MonoBehaviour
     public float MaxHp
     {
         get { return _maxHp + _maxHpModification; }
-        set { _maxHpModification = value - _maxHp; }
+        set
+        {
+            _maxHpModification = value - _maxHp;
+            if (CurHp > MaxHp)
+                CurHp = MaxHp;
+        }
     }
 
     public float CritChance
@@ -157,7 +162,113 @@ public class PlayerStatus : MonoBehaviour
         _dodge = GameConstantsSO.Instance.DefaultDodgeChance;
         _dmgReduction = GameConstantsSO.Instance.DefaultDamageReduction;
         
+        RegisterEventChannels();
+        
         SyncHpAndSatietyWithUi();
+        SyncActiveSkillWithUi();
+    }
+    
+    
+    
+    // ------------------------------------------------------------------------
+    // 현재 스킬 정보
+    // ------------------------------------------------------------------------
+    [Header("스킬")] [SerializeField, DisableInInspector] private PassiveSkillDataSO _passiveSkillData;
+    [SerializeField, DisableInInspector] private ActiveSkillDataSO _activeSkillData;
+
+    [SerializeField] private Image _activeSkillImage, _passiveSkillImage;
+
+    [SerializeField] private Button _activeSkillButton;
+    [SerializeField] private Image _activeSkillCooldownImage;
+    [SerializeField] private TextMeshProUGUI _activeSkillRemainingTmp, _activeSkillCooldownTmp;
+    
+    // 남은 액티브 스킬의 사용 횟수
+    private int _activeSkillRemaining;
+    // 액티브 스킬의 남은 쿨타임 
+    private int _activeSkillCounter;
+
+    private int ActiveSkillCounter
+    {
+        get => _activeSkillCounter;
+        // 0 이하로 떨어지지 않게 함.
+        set => _activeSkillCounter = Mathf.Max(0, value);
+    }
+
+    /*
+     * 메인 씬에서 선택한 스킬을 지정하는 메서드.
+     */
+    public void SetSkills(PassiveSkillDataSO passive, ActiveSkillDataSO active)
+    {
+        _passiveSkillData = passive;
+        _activeSkillData = active;
+
+        _passiveSkillImage.sprite = passive.Sprite;
+        _activeSkillImage.sprite = active.Sprite;
+        
+        RegisterPassiveSkill();
+        InitActiveSkill();
+    }
+    
+    // 패시브 스킬을 등록
+    private void RegisterPassiveSkill()
+    {
+        if(_passiveSkillData != null && _passiveSkillData.ID != "IDLE") _passiveSkillData.Register();
+    }
+    
+    // 액티브 스킬을 초기화
+    private void InitActiveSkill()
+    {
+        
+        if (_activeSkillData != null && _activeSkillData.ID != "IDLE")
+        {
+            _activeSkillRemaining = _activeSkillData.MaxCount;
+            _activeSkillCounter = _activeSkillData.StartingCooldown;
+            _activeSkillButton.onClick.AddListener(UseActiveSkill);
+        }
+        // 스킬이 없을 때 호출시 무시되게 함
+        else _activeSkillRemaining = -1;
+    }
+
+    // 액티브 스킬 버튼 클릭 시 호출되는 메서드
+    public void UseActiveSkill()
+    {
+        if (_activeSkillRemaining > 0 && _activeSkillCounter <= 0)
+        {
+            _activeSkillRemaining--;
+            _activeSkillCounter = _activeSkillData.Cooldown;
+            _activeSkillData.Use();
+        }
+
+        SyncActiveSkillWithUi();
+    }
+
+    /*
+     * 플레이어가 방을 옮길 때 쿨타임을 줄이는 메서드.
+     * 게임 시작 시 OnChangeRoom 이벤트에 등록한다.
+     */
+    public void CountSkillCooldown()
+    {
+        ActiveSkillCounter--;
+        SyncActiveSkillWithUi();
+    }
+
+    /*
+     * 액티브 스킬 버튼을 정보와 동기화
+     */
+    private void SyncActiveSkillWithUi()
+    {
+        if (_activeSkillRemaining > 0)
+        {
+            _activeSkillRemainingTmp.text = _activeSkillData.MaxCount == 1 ? "" :  _activeSkillRemaining.ToString();
+            _activeSkillCooldownTmp.text =  _activeSkillData.MaxCount == 1 ? "" : _activeSkillCounter.ToString();
+            _activeSkillCooldownImage.fillAmount = (float) _activeSkillCounter / _activeSkillData.Cooldown;
+        }
+        else
+        {
+            _activeSkillRemainingTmp.text = "";
+            _activeSkillCooldownTmp.text = "";
+            _activeSkillCooldownImage.fillAmount = _activeSkillData.ID == "IDLE" ? 0 : 1;
+        }
     }
     
     
@@ -234,5 +345,16 @@ public class PlayerStatus : MonoBehaviour
         tmp.text = value >= 0 ? $"<color=green>+ {value:0.#}</color>" : $"<color=red>{value:0.#}</color>";
         tmp.transform.DOLocalMoveY(tmp.transform.localPosition.y - 40f, 0.5f);
         Destroy(tmp.gameObject,0.75f);
+    }
+    
+    
+    // ------------------------------------------------------------------------
+    // 이벤트
+    // ------------------------------------------------------------------------
+    [Header("이벤트")] [SerializeField] private FloatChannelSO _modifyMaxHpChannel;
+
+    private void RegisterEventChannels()
+    {
+        _modifyMaxHpChannel.OnEventRaised += (x) => MaxHp += x;
     }
 }

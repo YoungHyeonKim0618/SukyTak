@@ -18,8 +18,8 @@ MonoBehaviour:
   RoomHeight: 4
   MaxSatiety: 100
   ElevatorWorkingChance: 40
-  FuseboxWorkingChance: 0
-  FuseboxFixChance: 0
+  FuseboxWorkingChance: 40
+  FuseboxFixChance: 75
   DefaultMaxHP: 100
   DefaultCritChance: 50
   DefaultAdditionalAttackChance: 0
@@ -28,7 +28,6 @@ MonoBehaviour:
   RottenFoodDmg: 8
   MonsterAttackFirstChance: 100
   RootChancePerDifficulty:
-  - 77.5
   - 70
   - 62.5
   - 55

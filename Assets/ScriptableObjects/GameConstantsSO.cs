@@ -58,17 +58,14 @@ public class GameConstantsSO : ScriptableObject
         float ret = 0;
         switch (difficulty)
         {
-            case GameDifficulty.EASY:
+            case GameDifficulty.NORMAL:
                 ret = RootChancePerDifficulty[0];
                 break;
-            case GameDifficulty.NORMAL:
+            case GameDifficulty.HARD:
                 ret = RootChancePerDifficulty[1];
                 break;
-            case GameDifficulty.HARD:
-                ret = RootChancePerDifficulty[2];
-                break;
             case GameDifficulty.HARDCORE:
-                ret = RootChancePerDifficulty[3];
+                ret = RootChancePerDifficulty[2];
                 break;
         }
 

@@ -102,7 +102,9 @@ public class Interactable : MonoBehaviour
 
     public void Interact()
     {
-        if (_rootables.Count > 0 && !_rooted)
+        if(_rootables.Count == 0)
+            Player.Instance.SetDialogue("비었어...");
+        else if (!_rooted)
         {
             StartCoroutine(Root());
         }

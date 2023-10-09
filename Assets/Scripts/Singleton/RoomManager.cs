@@ -10,6 +10,7 @@ public class RoomManager : MonoBehaviour
 {
     public static RoomManager Instance;
     [SerializeField] private Transform _buildingRoot;
+    [SerializeField] private Player _player;
 
     private void Awake()
     {
@@ -20,6 +21,10 @@ public class RoomManager : MonoBehaviour
             Destroy(this.gameObject);
             return;
         }
+        
+        _player.SetInstance();
+        
+        GetStartingData();
         
         // Room과 Floor들의 오브젝트 생성
         CreateBuilding();
@@ -38,6 +43,33 @@ public class RoomManager : MonoBehaviour
         CloseElevatorPanel();
         CloseFuseboxPanel();
     }
+
+
+    [SerializeField] private PassiveSkillDataSO _passiveIdleSkillData;
+    [SerializeField] private ActiveSkillDataSO _activeIdleSkillData;
+    /*
+     * Main 씬에서 설정한 값들을 불러오는 메서드.
+     */
+    private void GetStartingData()
+    {
+        if (DataManager.Instance != null)
+        {
+            _seed = DataManager.Instance.mapSeed;
+            _difficulty = DataManager.Instance.difficulty;
+            
+            _player.Status.SetSkills(DataManager.Instance.passiveSkill, DataManager.Instance.activeSkill);
+        }
+        else
+        {
+            if (_customMapSeed == -1) _seed = Random.Range(Int32.MinValue, Int32.MaxValue);
+            else _seed = _customMapSeed;
+            _difficulty = _customDifficulty;
+            _customMapSeed = _seed;
+            
+            _player.Status.SetSkills(_passiveIdleSkillData,_activeIdleSkillData);
+        }
+    }
+    
 
 
     // ------------------------------------------------------------------------
@@ -121,6 +153,9 @@ public class RoomManager : MonoBehaviour
     [SerializeField]
     private int _customMapSeed;
     [SerializeField] private GameDifficulty _customDifficulty;
+
+    private int _seed;
+    private GameDifficulty _difficulty;
     
     
     /*
@@ -130,24 +165,7 @@ public class RoomManager : MonoBehaviour
      */
     public void InitBuilding()
     {
-        int seed;
-        GameDifficulty difficulty;
-        
-        // DataManager 인스턴스가 있다면 받아오고, 없다면 설정한 값을 씀
-        if (DataManager.Instance != null)
-        {
-            seed = DataManager.Instance.MapSeed;
-            difficulty = DataManager.Instance.Difficulty;
-        }
-        else
-        {
-            if (_customMapSeed == -1) seed = Random.Range(Int32.MinValue, Int32.MaxValue);
-            else seed = _customMapSeed;
-            difficulty = _customDifficulty;
-            _customMapSeed = seed;
-        }
-        
-        Random.InitState(seed);
+        Random.InitState(_seed);
         
         InitSideRooms();
         InitCenterRooms();
@@ -328,7 +346,7 @@ public class RoomManager : MonoBehaviour
         else
         {
             // 플레이어 대사 출력
-            Player.Instance.SetDialogue("여기나 더 위의 전력이 나갔어...");
+            _player.SetDialogue("여기나 더 위의 전력이 나갔어...");
         }
     }
 
@@ -354,7 +372,7 @@ public class RoomManager : MonoBehaviour
              * 1. Player가 10*(n+1)층 이하로 내려가 봤고
              * 2. 10*n층을 포함한 위의 모든 두꺼비집이 고장나지 않아야 함
              */
-            bool available = Player.Instance.LowestFloorVisited < 10 * (i+1) && IsElevatorAvailable(10 * (i+1) - 1);
+            bool available = _player.LowestFloorVisited < 10 * (i+1) && IsElevatorAvailable(10 * (i+1) - 1);
             
             if(available)
             {
@@ -398,7 +416,7 @@ public class RoomManager : MonoBehaviour
                 _elevatorPanelButtonTmps[i].color = Color.black;
 
                 // 다른 층으로 이동
-                if(curFloor != Player.Instance.CurrentRoom.GetRoomPosition().floor)
+                if(curFloor != _player.CurrentRoom.GetRoomPosition().floor)
                     _elevatorPanelButtons[i].onClick.AddListener(() => MoveRoomByElevator(curFloor));
             }
             else
@@ -418,7 +436,7 @@ public class RoomManager : MonoBehaviour
     private void MoveRoomByElevator(int floor)
     {
         CloseElevatorPanel();
-        Player.Instance.MoveRoomByElevator(floor);
+        _player.MoveRoomByElevator(floor);
     }
 
     /*
@@ -462,7 +480,7 @@ public class RoomManager : MonoBehaviour
             _itemToFixFuseboxTmp.text = data.Name;
             
             // 필요한 아이템을 가지고 있을 때
-            if (Player.Instance.Inventory.IsExists(data))
+            if (_player.Inventory.IsExists(data))
             {
                 _tryFixTmp.text = "";
                 _fuseboxYesButton.onClick.RemoveAllListeners();
@@ -500,7 +518,7 @@ public class RoomManager : MonoBehaviour
         CloseFuseboxPanel();
         
         // 필요 아이템 소실
-        Player.Instance.Inventory.DropItem(_itemsNeedToFixFusebox[floor]);
+        _player.Inventory.DropItem(_itemsNeedToFixFusebox[floor]);
         
         // 고치기
         SucceedFixingFusebox(floor);
@@ -514,7 +532,7 @@ public class RoomManager : MonoBehaviour
         CloseFuseboxPanel();
         // 배고픔 5~ 14 소모
         int cost = Random.Range(5, 14);
-        Player.Instance.ModifySatiety(-cost);
+        _player.ModifySatiety(-cost);
 
         // 랜덤 재료 아이템 (없다면 무기 아이템) 소실
 
@@ -522,7 +540,7 @@ public class RoomManager : MonoBehaviour
         if(success) SucceedFixingFusebox(floor);
         
         // 플레이어 대사
-        Player.Instance.SetDialogue(success ? "해냈어! 나의 노력이 결실을 맺었어." : "시간만 날렸군!");
+        _player.SetDialogue(success ? "해냈어! 나의 노력이 결실을 맺었어." : "시간만 날렸군!");
     }
 
     private void SucceedFixingFusebox(int floor)
@@ -541,7 +559,7 @@ public class RoomManager : MonoBehaviour
     {
         if (DataManager.Instance != null)
         {
-            return DataManager.Instance.MapSeed;
+            return DataManager.Instance.mapSeed;
         }
         return _customMapSeed;
     }
@@ -550,7 +568,7 @@ public class RoomManager : MonoBehaviour
     {
         if (DataManager.Instance != null)
         {
-            return DataManager.Instance.Difficulty;
+            return DataManager.Instance.difficulty;
         }
         return _customDifficulty;
     }

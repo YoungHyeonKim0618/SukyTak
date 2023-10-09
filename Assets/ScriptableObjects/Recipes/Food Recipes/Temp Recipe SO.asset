@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Temp Recipe SO
   m_EditorClassIdentifier: 
   Output: {fileID: 11400000, guid: ad182df58ff056243bec07b49ca53e59, type: 2}
-  HandCombinable: 1
+  HandCombinable: 0
   NecessaryFurnitureLevel: 0
   Inputs:
   - {fileID: 11400000, guid: c76d4253f683a2c44a4086ff88e5b172, type: 2}

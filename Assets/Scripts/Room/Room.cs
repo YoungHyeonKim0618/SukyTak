@@ -187,6 +187,7 @@ public class Room : MonoBehaviour
     private List<Interactable> _interactables = new List<Interactable>();
     
     private RoomDataSO _dataSO;
+    
     public void SetRoomData(RoomDataSO dataSO)
     {
         _dataSO = dataSO;
@@ -229,7 +230,14 @@ public class Room : MonoBehaviour
             _interactables.Add(interactable);
         }
     }
-    
+
+    public void DoDialogue()
+    {
+        if (GetRoomPosition().direction != RoomDirection.CENTER && _dataSO.EnterDialogue != "")
+        {
+            Player.Instance.SetDialogue(_dataSO.EnterDialogue);
+        }
+    }
     
     
     // ------------------------------------------------------------------------

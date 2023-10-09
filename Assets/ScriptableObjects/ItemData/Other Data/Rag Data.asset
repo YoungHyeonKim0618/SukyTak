@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b78c606599c3c4344a0cc12b3e451f36, type: 3}
+  m_Name: Rag Data
+  m_EditorClassIdentifier: 
+  ID: RAG
+  Name: "\uAC78\uB808"
+  Sprite: {fileID: 21300000, guid: 51a515850b0d25348b46da1435dc4e95, type: 3}
+  Type: 8
+  Stackable: 1

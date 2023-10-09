@@ -468,6 +468,7 @@ public class PlayerInventory : MonoBehaviour
             else
             {
                 _materialDisplays[i].gameObject.SetActive(false);
+                _materialDisplayBackgrounds[i].gameObject.SetActive(false);
             }
         }
     }
@@ -515,9 +516,11 @@ public class PlayerInventory : MonoBehaviour
      */
     public void TryCombine()
     {
-        if (_selectingRecipe != null && IsCombinable())
+        if (_selectingRecipe != null && IsCombinable() )
         {
-            Combine(_selectingRecipe);
+            // 손에서 조합 가능한 조합법이거나 VIP 룸에 있어야 조합 가능
+            if(_selectingRecipe.HandCombinable || Player.Instance.CurrentRoom.GetRoomPosition().floor == GameConstantsSO.Instance.MaxFloor-1)
+                Combine(_selectingRecipe);
         }
     }
 

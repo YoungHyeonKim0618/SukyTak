@@ -21,9 +21,14 @@ public class DataManager : MonoBehaviour
     }
     
     [DisableInInspector]
-    public int MapSeed;
+    public int mapSeed;
     [DisableInInspector]
-    public GameDifficulty Difficulty;
+    public GameDifficulty difficulty;
 
+
+    [DisableInInspector]
+    public PassiveSkillDataSO passiveSkill;
+    [DisableInInspector]
+    public ActiveSkillDataSO activeSkill;
 
 }

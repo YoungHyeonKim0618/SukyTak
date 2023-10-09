@@ -13,7 +13,8 @@ using Event = Spine.Event;
 public class Player : MonoBehaviour
 {
     public static Player Instance;
-    private void Awake()
+    
+    public void SetInstance()
     {
         if (!Instance) Instance = this;
         else Destroy(gameObject);
@@ -32,7 +33,7 @@ public class Player : MonoBehaviour
         //TODO : 이전 씬에서 선택한 패시브/액티브 특성 효과 적용
         
         // 이벤트 채널 등록
-        _onTryMoveChannel.OnEventRaised += TryMove;
+        RegisterEvents();
         
         // 위치 초기화
         InitPlayerPosition();
@@ -41,14 +42,15 @@ public class Player : MonoBehaviour
         // 애니메이션 Idle로 초기화
         SetAnimationState("Idle");
         
-        //TODO : 디버그용 메서드 삭제
-        _onMoveChannel.OnEventRaised += PrintOnEnterRoom;
+        // 방 이동 시 액티브 스킬 카운터 감소
+        _onMoveChannel.OnEventRaised += (_) => _status.CountSkillCooldown();
 
         // 플레이어의 스파인 이벤트 동기화 (공격)
         RegisterSpineEvent();
         
         // 플레이어 스탯 초기화
         _status.InitStatus();
+        _startGameChannel.OnRaise();
         
         CloseDialogue();
     }
@@ -60,6 +62,21 @@ public class Player : MonoBehaviour
         MoveRoomInstantly(CurrentRoomPosition);
     }
 
+    // ------------------------------------------------------------------------
+    // 이벤트에 등록
+    // ------------------------------------------------------------------------
+    [Header("이벤트")] [SerializeField] private VoidChannelSO _startGameChannel;
+    [SerializeField] private FloatChannelSO _modifyHpChannel;
+    [SerializeField] private FloatChannelSO _modifySatietyChannel;
+
+    [SerializeField] private IntChannelSO _lowestFloorChannel;
+
+    private void RegisterEvents()
+    {
+        _onTryMoveChannel.OnEventRaised += TryMove;
+        _modifyHpChannel.OnEventRaised += ModifyHp;
+        _modifySatietyChannel.OnEventRaised += (x) => ModifySatiety(Mathf.RoundToInt(x));
+    }
     
     // ------------------------------------------------------------------------
     // 저장 데이터로부터 로드
@@ -140,17 +157,6 @@ public class Player : MonoBehaviour
     
 
     
-    // ------------------------------------------------------------------------
-    // FSM
-    // ------------------------------------------------------------------------
-    private enum PlayerState
-    {
-        MOVE,
-        BATTLE
-    }
-    private PlayerState _currentState;
-    
-    
     
     
     // ------------------------------------------------------------------------
@@ -182,7 +188,15 @@ public class Player : MonoBehaviour
     
     // 방문한 최저 층
     private int _lowestFloorVisited = Int32.MaxValue;
-    public int LowestFloorVisited => _lowestFloorVisited;
+    public int LowestFloorVisited { 
+        get => _lowestFloorVisited;
+        set
+        {
+            if(value != _lowestFloorVisited)
+                _lowestFloorChannel.OnRaise(value);
+            _lowestFloorVisited = value;
+        }
+    }
 
     /*
      * 현재 방이 아닌 다른 방 클릭 시 발생되는 이벤트로부터 Invoke되는 메서드.
@@ -464,6 +478,8 @@ public class Player : MonoBehaviour
         else _currentRoom.DeactivateInteractables();
         
         room.Enter();
+        // 입장 시 대사가 있다면 표기
+        room.DoDialogue();
         _currentRoom = room;
         _onMoveChannel.OnRaise(room);
         if(room.MonsterExists)
@@ -476,8 +492,8 @@ public class Player : MonoBehaviour
         // 방 이동 시 포만도 - 1
         _status.CurSatiety -= 1;
         // 내려간 최저 층 갱신
-        if (room.GetRoomPosition().floor < _lowestFloorVisited)
-            _lowestFloorVisited = room.GetRoomPosition().floor;
+        if (room.GetRoomPosition().floor < LowestFloorVisited)
+            LowestFloorVisited = room.GetRoomPosition().floor;
     }
 
     /*
