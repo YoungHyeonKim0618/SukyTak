@@ -266,11 +266,18 @@ public class RoomManager : MonoBehaviour
 
     private void TurnLightsOn(int floor)
     {
-        for (int j = 0; j < 5; j++)
+        for(int i = floor; i > 0; i -= 5)
         {
-            _roomsDictionary[new RoomPosition(floor - j,RoomDirection.LEFT)].TurnLightOn();
-            _roomsDictionary[new RoomPosition(floor - j,RoomDirection.CENTER)].TurnLightOn();
-            _roomsDictionary[new RoomPosition(floor - j,RoomDirection.RIGHT)].TurnLightOn();
+            if (_areFuseboxesWorking[i])
+            {
+                for (int j = 0; j < 5; j++)
+                {
+                    _roomsDictionary[new RoomPosition(i - j, RoomDirection.LEFT)].TurnLightOn();
+                    _roomsDictionary[new RoomPosition(i - j, RoomDirection.CENTER)].TurnLightOn();
+                    _roomsDictionary[new RoomPosition(i - j, RoomDirection.RIGHT)].TurnLightOn();
+                }
+            }
+            else break;
         }
     }
     
@@ -297,11 +304,15 @@ public class RoomManager : MonoBehaviour
      */
     private void SpawnMonsters()
     {
-        //TODO : 디버그용, 랜덤 알고리즘
-        
-        //SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(96,RoomDirection.CENTER)));
-        //SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(97,RoomDirection.RIGHT)));
-        //SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(98,RoomDirection.LEFT)));
+        for (int i = 1; i < GameConstantsSO.Instance.MaxFloor - 1; i++)
+        {
+            if(Random.Range(0,100) < GameConstantsSO.Instance.GetMonsterChanceFromDifficulty(_difficulty))
+                SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(i,RoomDirection.CENTER)));
+            if(Random.Range(0,100) < GameConstantsSO.Instance.GetMonsterChanceFromDifficulty(_difficulty))
+                SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(i,RoomDirection.LEFT)));
+            if(Random.Range(0,100) < GameConstantsSO.Instance.GetMonsterChanceFromDifficulty(_difficulty))
+                SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(i,RoomDirection.RIGHT)));
+        }
     }
 
     private void SpawnMonster(Monster monsterPrefab, Room room)

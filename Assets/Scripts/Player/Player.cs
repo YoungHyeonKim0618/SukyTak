@@ -70,12 +70,15 @@ public class Player : MonoBehaviour
     [SerializeField] private FloatChannelSO _modifySatietyChannel;
 
     [SerializeField] private IntChannelSO _lowestFloorChannel;
+    [SerializeField] private ItemDataChannelSO _obtainItemChannel;
 
     private void RegisterEvents()
     {
         _onTryMoveChannel.OnEventRaised += TryMove;
         _modifyHpChannel.OnEventRaised += ModifyHp;
         _modifySatietyChannel.OnEventRaised += (x) => ModifySatiety(Mathf.RoundToInt(x));
+
+        _obtainItemChannel.OnEventRaised += _inventory.ObtainItem;
     }
     
     // ------------------------------------------------------------------------

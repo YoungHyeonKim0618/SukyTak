@@ -18,7 +18,7 @@ MonoBehaviour:
   Description: "\uD55C \uBC88\uB9CC \uBA39\uC744 \uC218 \uC788\uC9C0\uB9CC \uCD5C\uD6C4\uC758
     \uB9CC\uCC2C\uC73C\uB85C\uB294 \uCDA9\uBD84\uD569\uB2C8\uB2E4. \uD3EC\uB9CC\uAC10\uC744
     80 \uCC44\uC6C1\uB2C8\uB2E4."
-  MaxCount: 2
-  Cooldown: 30
-  StartingCooldown: 10
+  MaxCount: 1
+  Cooldown: 0
+  StartingCooldown: 0
   OnUseData: {fileID: 11400000, guid: eaa054d2cbaef7a4787fd0229ea16add, type: 2}

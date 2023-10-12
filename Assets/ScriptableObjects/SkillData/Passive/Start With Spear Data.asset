@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 296c7465959ded043aee36cb6d7670cd, type: 3}
+  m_Name: Start With Spear Data
+  m_EditorClassIdentifier: 
+  ID: START_WITH_SPEAR
+  Name: "\uCD08\uC2EC\uC790\uC758 \uD589\uC6B4"
+  Sprite: {fileID: 21300000, guid: 514ed86469ca0f74a976a6d61d068659, type: 3}
+  Description: "\uB2F9\uC2E0\uC758 \uBC29 \uAD6C\uC11D\uC5D0\uC11C \uC7A1\uB3D9\uC0AC\uB2C8\uB4E4\uC744
+    \uCC3E\uC558\uC2B5\uB2C8\uB2E4! \uC870\uC7A1\uD558\uC9C0\uB9CC \uB4E0\uB4E0\uD55C
+    \uCC3D\uACFC \uD568\uAED8 \uC2DC\uC791\uD569\uB2C8\uB2E4."
+  RegisterDataList:
+  - {fileID: 11400000, guid: ae434c5ec502acb4481c9a6e6ef5ec02, type: 2}
+  EffectDataList:
+  - {fileID: 11400000, guid: 399d1d99c268a2449a722a62bba6de6c, type: 2}

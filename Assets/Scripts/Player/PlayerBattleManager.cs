@@ -49,11 +49,13 @@ public class PlayerBattleManager : MonoBehaviour
     // 현재 마주하고 있는 몬스터.
     [SerializeField, DisableInInspector]
     private Monster _facingMonster;
+    private bool _isFacingMonster;
 
     // 살아있는 몬스터가 있는 방에 진입할 때 호출되는 메서드
     public void EncounterMonster(Monster monster)
     {
         _facingMonster = monster;
+        _isFacingMonster = true;
         
         // 무기 정보 표시
         DisplayEquippedWeapons();
@@ -89,6 +91,7 @@ public class PlayerBattleManager : MonoBehaviour
         
         // 현재 위의 Spine 관련 코드가 바로 적용되지 않아서 NullException이 나옴
         //_facingMonster = null;
+        _isFacingMonster = false;
     }
     
     public void BeginBattle()
@@ -317,7 +320,7 @@ public class PlayerBattleManager : MonoBehaviour
     private GameObject _equippedWeaponsRoot;
     [SerializeField]private HitSelectionPanel _hitSelectionPanel;
 
-    private void DisplayEquippedWeapons()
+    public void DisplayEquippedWeapons()
     {
         _equippedWeaponsRoot.SetActive(true);
     }
@@ -325,6 +328,13 @@ public class PlayerBattleManager : MonoBehaviour
     private void HideEquippedWeapons()
     {
         _equippedWeaponsRoot.SetActive(false);
+    }
+
+    //  인벤토리를 닫을 때 호출되는 메서드.
+    public void TryHideEquippedWeapons()
+    {
+        if(!_isFacingMonster)
+            HideEquippedWeapons();
     }
     
     public void OpenHitSelectionPanel(Monster monster)

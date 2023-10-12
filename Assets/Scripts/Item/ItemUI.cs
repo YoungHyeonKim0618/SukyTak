@@ -17,6 +17,7 @@ public class ItemUI : MonoBehaviour,IPointerClickHandler, IBeginDragHandler,IDra
     [SerializeField] private Image _stackTmpBackground;
 
 
+
     public void SetItem(Item item)
     {
         _item = item;
@@ -51,6 +52,7 @@ public class ItemUI : MonoBehaviour,IPointerClickHandler, IBeginDragHandler,IDra
             }
         }
     }
+
     
     // ------------------------------------------------------------------------
     // 아이템 정보
@@ -75,6 +77,10 @@ public class ItemUI : MonoBehaviour,IPointerClickHandler, IBeginDragHandler,IDra
     public void OnBeginDrag(PointerEventData eventData)
     {
         _draggingItemUi = this;
+        //무기일 경우 Weapon UI 업데이트
+        Player.Instance.Inventory.SetWeaponUiStandby();
+        
+        _image.maskable = false;
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -88,6 +94,7 @@ public class ItemUI : MonoBehaviour,IPointerClickHandler, IBeginDragHandler,IDra
         // 다른 ItemUI와 위치 바꾸기
         Player.Instance.CheckItemUiBelow(this,eventData);
         _draggingItemUi = null;
+        _image.maskable = true;
     }
     
 

@@ -52,25 +52,14 @@ public class GameConstantsSO : ScriptableObject
     public float MonsterAttackFirstChance;
 
     [Header("난이도별 변수")]
-    public List<float> RootChancePerDifficulty;
-    public float GetRootChanceFromDifficulty(GameDifficulty difficulty)
-    {
-        float ret = 0;
-        switch (difficulty)
-        {
-            case GameDifficulty.NORMAL:
-                ret = RootChancePerDifficulty[0];
-                break;
-            case GameDifficulty.HARD:
-                ret = RootChancePerDifficulty[1];
-                break;
-            case GameDifficulty.HARDCORE:
-                ret = RootChancePerDifficulty[2];
-                break;
-        }
+    [SerializeField] private List<float> RootChancePerDifficulty;
 
-        return ret;
-    }
+    public float GetRootChanceFromDifficulty(GameDifficulty difficulty) => RootChancePerDifficulty[(int)difficulty];
+
+
+    [SerializeField] private List<float> MonsterChancePerDifficulty;
+
+    public float GetMonsterChanceFromDifficulty(GameDifficulty difficulty) => MonsterChancePerDifficulty[(int)difficulty];
 
     [Header("글로벌 에셋")]
     public Sprite InteractaleActivatedSprite;

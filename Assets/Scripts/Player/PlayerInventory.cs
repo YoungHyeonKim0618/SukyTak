@@ -10,6 +10,9 @@ using Random = UnityEngine.Random;
 
 public class PlayerInventory : MonoBehaviour
 {
+    [SerializeField]
+    private PlayerBattleManager _battleManager;
+    
     // 모든 아이템 리스트
     private List<Item> _items = new List<Item>();
 
@@ -92,6 +95,13 @@ public class PlayerInventory : MonoBehaviour
         }
     }
 
+    /*
+     * 아이템을 인벤토리에서 제거하는 메서드.
+     * [무기/장신구] 장착되어있는 아이템이 제거될 때에는 : 
+     * - 제거되는 아이템의 ItemData가 장착된 ItemData와 같은지 확인한다.
+     * - 제거되는 아이템의 남은 수량을 확인한다.
+     * - 0이라면 장착을 해제한다.
+     */
     public void DropItem(Item item)
     {
         if (!_items.Contains(item))
@@ -124,6 +134,7 @@ public class PlayerInventory : MonoBehaviour
         }
         
         //TODO : 장착되어있는 무기나 장신구였다면 해제해줌
+        TryUnequipWeapon(item.Data);
     }
 
     public void DropItem(ItemDataSO itemData)
@@ -206,30 +217,67 @@ public class PlayerInventory : MonoBehaviour
     
     // 장착 중인 무기 아이템이 사라질 때, 장착도 해제되어야 함
     [SerializeField, DisableInInspector] private WeaponData _leftWeapon, _rightWeapon;
-
+    public WeaponData LeftWeapon => _leftWeapon != null ? _leftWeapon : s_fistData;
+    public WeaponData RightWeapon => _rightWeapon != null ? _rightWeapon : s_fistData;
+    
     private bool _selectingLeftWeapon;
 
-    public WeaponData CurWeaponData => _selectingLeftWeapon ? _leftWeapon : _rightWeapon;
+    public WeaponData CurWeaponData => _selectingLeftWeapon ? LeftWeapon : RightWeapon;
+
+    [SerializeField] private Image _leftWeaponButtonImage, _rightWeaponButtonImage;
+    [SerializeField] private Color _weaponButtonSelectedColor, _defaultWeaponButtonColor;
 
     private void InitWeapons()
     {
-        _leftWeapon = s_fistData;
-        _rightWeapon = s_fistData;
+        SelectWeapon(true);
         RefreshWeaponUi();
+    }
+
+    public void SelectWeapon(bool left)
+    {
+        _selectingLeftWeapon = left;
+        _leftWeaponButtonImage.color = left ? _weaponButtonSelectedColor : _defaultWeaponButtonColor;
+        _rightWeaponButtonImage.color = !left ? _weaponButtonSelectedColor : _defaultWeaponButtonColor;
     }
 
     private void EquipWeapon(WeaponData data, bool left)
     {
         if (left) _leftWeapon = data;
         else _rightWeapon = data;
+        RefreshWeaponUi();
     }
 
     private void UnEquipWeapon(WeaponData data)
     {
-        if (_leftWeapon == data || _rightWeapon == data)
+        if (_leftWeapon == data)
         {
-            
+            _leftWeapon = null;
         }
+        if (_rightWeapon == data)
+        {
+            _rightWeapon = null;
+        }
+        RefreshWeaponUi();
+    }
+
+    /*
+     * 무기를 인벤토리에서 제거할 때 호출되는 메서드.
+     * 무기가 장착되었었고, 더 이상 남지 않았다면 장착 해제한다.
+     */
+    private void TryUnequipWeapon(ItemDataSO data)
+    {
+        if (data is WeaponData weaponData)
+        {
+            if (weaponData == _leftWeapon && GetItemNumber(data) == 0)
+            {
+                UnEquipWeapon(weaponData);
+            }
+            else if (weaponData == _rightWeapon && GetItemNumber(data) == 0)
+            {
+                UnEquipWeapon(weaponData);
+            }
+        }
+        RefreshWeaponUi();
     }
     
     
@@ -262,12 +310,16 @@ public class PlayerInventory : MonoBehaviour
     // UI
     // ------------------------------------------------------------------------
     [Header("UI")] [SerializeField] private RectTransform _inventoryRoot;
+
     // Item 버튼 오브젝틑의 프리팹
     [SerializeField] private ItemUI p_itemUi;
     // ItemUI의 부모 그리드 
     [SerializeField] private Transform _weaponGrid, _accessoryGrid, _medicalGrid, _materialGrid;
+    [SerializeField] private Sprite _greenCrossSprite;
 
     [Space(10)] [SerializeField] private GraphicRaycaster _raycaster;
+    [SerializeField] private Canvas _draggingItemUiCanvas;
+    public Canvas DraggingItemUiCanvas => _draggingItemUiCanvas;
 
 
 
@@ -275,13 +327,25 @@ public class PlayerInventory : MonoBehaviour
     {
         _inventoryRoot.gameObject.SetActive(true);
         SelectRecipeType((int)ItemType.WEAPON);
+        
+        // WeaponUI의 부모를 인벤토리 UI로 정하고, 그 중 가장 하위에 둠
+        _weaponUiRoot.SetParent(_inventoryRoot);
+        _weaponUiRoot.SetSiblingIndex(0);
+        
         ForceUpdateGridLayouts();
+        
+        // 무기 선택 UI 활성화
+        _battleManager.DisplayEquippedWeapons();
     }
 
     public void CloseInventoryUi()
     {
         ResetSelectedRecipe();
+        _weaponUiRoot.SetParent(_weaponUiRootOutsideParent);
         _inventoryRoot.gameObject.SetActive(false);
+        
+        // 적이 없다면 무기 선택 UI 비활성화
+        _battleManager.TryHideEquippedWeapons();
     }
     
     /*
@@ -305,9 +369,14 @@ public class PlayerInventory : MonoBehaviour
             
                 itemUi.transform.SetSiblingIndex(otherIndex);
                 caller.transform.SetSiblingIndex(myIndex);
-                return;
+            }
+            // 들고 있는 게 무기이고, 아래에 무기 장착 UI가 있으면 장착함
+            else if (caller.Item.Data.Type.HasFlag(ItemType.WEAPON) && result.gameObject.CompareTag("WeaponUI"))
+            {
+                EquipWeapon(caller.Item.Data as WeaponData, caller.transform.position.x < 0);
             }
         }
+        RefreshWeaponUi();
         ForceUpdateGridLayouts();
     }
 
@@ -320,19 +389,43 @@ public class PlayerInventory : MonoBehaviour
     }
 
 
+    // WeaponUIRoot는 인벤토리가 열리지 않았을 때엔 다른 캔버스에 존재하다가,
+    // 인벤토리가 열릴 때 인벤토리의 자식이 된다.
+    // 이럼으로써 Render 순서와 GraphicRaycast를 올바르게 할 수 있음.
+    [SerializeField] private Transform _weaponUiRootOutsideParent;
+    [SerializeField] private Transform _weaponUiRoot;
     [SerializeField] private Image _leftWeaponImage, _rightWeaponImage;
     [SerializeField] private TextMeshProUGUI _leftWeaponNameTmp, _rightWeaponNameTmp;
     [SerializeField] private TextMeshProUGUI _leftWeaponDescTmp, _rightWeaponDescTmp;
+    
+    /*
+     * WeaponUI들을 동기화하는 메서드
+     */
     private void RefreshWeaponUi()
     {
-        _leftWeaponImage.sprite = _leftWeapon.Sprite;
-        _rightWeaponImage.sprite = _rightWeapon.Sprite;
+        _leftWeaponImage.sprite = LeftWeapon.Sprite;
+        _rightWeaponImage.sprite = RightWeapon.Sprite;
         
-        _leftWeaponNameTmp.text = _leftWeapon.Name;
-        _rightWeaponNameTmp.text = _rightWeapon.Name;
+        _leftWeaponNameTmp.text = LeftWeapon.Name;
+        _rightWeaponNameTmp.text = RightWeapon.Name;
 
-        _leftWeaponDescTmp.text = _leftWeapon.GetString();
-        _rightWeaponDescTmp.text = _rightWeapon.GetString();
+        _leftWeaponDescTmp.text = LeftWeapon.GetString();
+        _rightWeaponDescTmp.text = RightWeapon.GetString();
+    }
+
+    /*
+     * WeaponData를 가지는 ItemUI를 드래그 중일 때 WeaponUI를 대기 상태로 바꾸는 메서드.
+     */
+    public void SetWeaponUiStandby()
+    {
+        _leftWeaponImage.sprite = _greenCrossSprite;
+        _rightWeaponImage.sprite = _greenCrossSprite;
+        
+        _leftWeaponNameTmp.text = "";
+        _rightWeaponNameTmp.text = "";
+
+        _leftWeaponDescTmp.text ="";
+        _rightWeaponDescTmp.text = "";
     }
     
     // ------------------------------------------------------------------------

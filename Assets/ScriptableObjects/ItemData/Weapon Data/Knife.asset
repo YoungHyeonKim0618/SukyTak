@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79820bacc432d964a9cb849894f1a871, type: 3}
-  m_Name: Fist
+  m_Name: Knife
   m_EditorClassIdentifier: 
-  ID: FIST
-  Name: "\uC8FC\uBA39"
-  Sprite: {fileID: 21300000, guid: 660ba19c0275d3c4fa208c40828275a5, type: 3}
+  ID: KNIFE
+  Name: "\uC2DD\uCE7C"
+  Sprite: {fileID: 21300000, guid: 498867e3b8c047041b01871edd5bbe20, type: 3}
   Type: 1
   Stackable: 0
-  MinDmg: 2
-  MaxDmg: 3
+  MinDmg: 3
+  MaxDmg: 5

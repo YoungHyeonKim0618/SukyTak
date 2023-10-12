@@ -16,6 +16,6 @@ MonoBehaviour:
   Background: {fileID: 21300000, guid: ab2a0427a5d968c46b7c22e3e8309c58, type: 3}
   VisualObjects:
   - interactableSo: {fileID: 11400000, guid: 961e4b316edcdf549b6ee69bcf469f3a, type: 2}
-    position: {x: -1.63, y: 0}
+    position: {x: -1.51, y: 0}
     scale: {x: 1.25, y: 1.25}
   EnterDialogue: "\uC5C4\uB9C8\uAE5C!"
