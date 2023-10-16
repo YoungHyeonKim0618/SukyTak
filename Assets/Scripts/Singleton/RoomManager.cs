@@ -313,13 +313,18 @@ public class RoomManager : MonoBehaviour
             if(Random.Range(0,100) < GameConstantsSO.Instance.GetMonsterChanceFromDifficulty(_difficulty))
                 SpawnMonster(p_zombie,GetRoomFromPosition(new RoomPosition(i,RoomDirection.RIGHT)));
         }
+
+        
     }
 
+    
     private void SpawnMonster(Monster monsterPrefab, Room room)
     {
         Monster monster = Instantiate(monsterPrefab,room.MonsterPos,Quaternion.identity, _monsterCanvas);
         monster.InitMonster();
         room.PlaceMonster(monster);
+
+        List<List<int>> a = new List<List<int>>();
     }
 
     /*

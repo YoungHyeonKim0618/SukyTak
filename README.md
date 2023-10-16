@@ -9,3 +9,10 @@
 1. Relases - Prototype Build 1 - Assets - Build.zip 다운로드.
 2. 원하는 폴더에 압축 풀기
 3. SukyTak.exe 실행
+
+
+![start](./GitImage/starting.gif)
+
+![root](./GitImage/rooting.gif)
+
+![battle](./GitImage/battle.gif)
